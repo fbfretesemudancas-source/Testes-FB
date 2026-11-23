@@ -1,0 +1,52 @@
+/* Identidade visual FB Fretes — tokens herdados do projeto base */
+:root{
+  --bg:#eceef0; --panel:#ffffff; --fg:#14171a; --mut:#5b646d; --line:#d8dce1; --field:#f6f7f8;
+  --red:#d7141a; --red-fg:#ffffff; --red-soft:#fde9ea; --ok:#13795b; --black:#0d0d0d;
+  --f-body:'Barlow',system-ui,sans-serif; --f-disp:'Barlow Condensed','Barlow',sans-serif; --f-logo:'Anton',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1113; --panel:#191c20; --fg:#eceef1; --mut:#98a1ab; --line:#2b3036; --field:#101215;
+  --red:#e3232a; --red-soft:#3a1517; --ok:#4ccf9f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1113; --panel:#191c20; --fg:#eceef1; --mut:#98a1ab; --line:#2b3036; --field:#101215;
+  --red:#e3232a; --red-soft:#3a1517; --ok:#4ccf9f; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 var(--f-body)}
+button,input,select,textarea{font:inherit;color:inherit}
+img{max-width:100%}
+
+/* Componentes */
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;min-height:40px}
+.btn:hover{border-color:var(--mut)}
+.btn.pri{background:var(--red);border-color:var(--red);color:var(--red-fg)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.sm{padding:5px 10px;min-height:32px;font-size:13px}
+.btn[disabled]{opacity:.6;cursor:wait}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.card>h2{font:700 15px/1 var(--f-disp);letter-spacing:.08em;text-transform:uppercase;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.card>h2::before{content:"";width:10px;height:10px;background:var(--red);border-radius:2px}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0}
+.f>span{font-size:12px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.f input,.f select,.f textarea{background:var(--field);border:1px solid var(--line);border-radius:7px;padding:8px 10px;min-height:40px;width:100%}
+.f textarea{resize:vertical;min-height:84px}
+.note{font-size:13px;color:var(--mut)}
+.banner{background:var(--red-soft);border:1px solid var(--red);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.kpi small{display:block;font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+.kpi b{font:700 24px var(--f-disp);font-variant-numeric:tabular-nums}
+.kpi em{display:block;font:500 12px var(--f-body);font-style:normal;color:var(--mut);margin-top:2px}
+.kpi.big em{color:#ffd9da}
+.kpi.neg b{color:var(--red)}
+.kpi.big{background:var(--red);border-color:var(--red);color:#fff}
+.kpi.big small{color:#ffd9da}
+.row-list{display:grid;gap:8px}
+.row-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.row-item .n{font:700 20px var(--f-disp);color:var(--red);font-variant-numeric:tabular-nums}
+.row-item b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-item small{color:var(--mut)}
+.row-item .v{font-weight:700;font-variant-numeric:tabular-nums}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#14171a;color:#fff;padding:10px 16px;border-radius:8px;z-index:50;font-weight:600;max-width:90vw;text-align:center}

@@ -1,0 +1,101 @@
+/* Formulários, listas e editor com prévia — portados do projeto base */
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn.danger{color:var(--red)}
+.row{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:10px}
+.row.r1{grid-template-columns:minmax(0,1fr)}
+.row.r3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.row.r21{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.sub{font:700 12px var(--f-disp);letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin:14px 0 8px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.chk{display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;min-height:34px}
+.chk input{width:18px;height:18px;accent-color:var(--red);flex:none}
+.items{display:grid;gap:6px}
+.it{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:6px;align-items:center}
+.it input[type=text],.it input[type=number]{background:var(--field);border:1px solid var(--line);border-radius:7px;padding:7px 8px;min-height:38px;width:100%}
+.sz{display:flex;gap:3px}.sz label{display:flex}
+.sz input{position:absolute;opacity:0;pointer-events:none}
+.sz span{width:32px;height:38px;display:grid;place-items:center;border:1px solid var(--line);border-radius:7px;font-weight:700;background:var(--field);cursor:pointer;font-size:13px}
+.sz input:checked+span{background:var(--red);border-color:var(--red);color:var(--red-fg)}
+.sz input:focus-visible+span{outline:2px solid var(--red);outline-offset:2px}
+.tot{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tot .kpi{background:var(--field)}
+.tot .kpi.big{background:var(--red)}
+.tot .kpi b{font-size:22px}
+
+/* Lista (OS, orçamentos, clientes) */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.toolbar .grow{flex:1;min-width:200px}
+.toolbar input[type=search]{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;min-height:40px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--mut)}
+.chip[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:var(--red-fg)}
+.hist{display:grid;gap:8px}
+.h{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.h .n{flex:none;font:700 20px var(--f-disp);color:var(--red);font-variant-numeric:tabular-nums}
+.h .t{flex:1 1 200px;min-width:0}.h .t b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.h .t small{color:var(--mut)}
+.h .v{flex:none;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.h .v:empty{display:none}
+.h .b{flex:0 1 auto;display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.badge{display:inline-block;padding:1px 9px;border-radius:999px;font:700 11px/1.5 var(--f-disp);letter-spacing:.07em;text-transform:uppercase;border:1px solid var(--line);background:var(--field);color:var(--mut);vertical-align:middle}
+.badge.andamento,.badge.aguardando{color:#b45309;border-color:#d97706;background:color-mix(in srgb,#d97706 14%,transparent)}
+.badge.concluida,.badge.convertido{color:var(--ok);border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.badge.cancelada,.badge.recusado,.badge.vencido{color:var(--red);border-color:var(--red);background:var(--red-soft)}
+
+/* Editor: formulário + prévia A4 ao vivo (abas abaixo de 1280px) */
+.editor{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}
+.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px;margin-bottom:12px}
+.tabs button{flex:1;border:0;background:none;padding:8px 6px;border-radius:7px;font-weight:600;color:var(--mut);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--red);color:var(--red-fg)}
+.prevwrap{overflow:hidden;border-radius:6px;box-shadow:0 6px 26px rgba(0,0,0,.28);background:#fff}
+.prevhost{width:100%}
+@media (max-width:1279px){
+  .editor[data-tab="form"] .prev{display:none}
+  .editor[data-tab="prev"] .formcol{display:none}
+}
+@media (min-width:1280px){
+  .editor{grid-template-columns:minmax(340px,480px) minmax(0,1fr)}
+  .editor .prev{position:sticky;top:16px}
+  .tabs{display:none}
+}
+@media (max-width:420px){.row,.row.r3{grid-template-columns:minmax(0,1fr)}.row.keep{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:minmax(0,1fr)}}
+
+/* Ficha do cliente */
+.sublist{display:grid;gap:8px;margin-bottom:10px}
+.subrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:8px}
+.subrow.addr{grid-template-columns:minmax(0,2fr) 70px minmax(0,1fr) minmax(0,1fr) auto}
+@media (max-width:700px){.subrow,.subrow.addr{grid-template-columns:minmax(0,1fr)}}
+.used{display:grid;gap:6px;margin-top:6px}
+.used div{font-size:13px;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.used small{color:var(--mut)}
+.pickline{margin-bottom:10px}
+
+/* Composição do preço */
+.brk>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.brk>div.banner{display:block}
+.brk small{color:var(--mut);font-weight:500}
+.brk .tt{font-weight:700;border-bottom:2px solid var(--line)}
+.brk .big{font:700 22px var(--f-disp);color:var(--red);border-bottom:0}
+.brk b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tplbox textarea{width:100%;min-height:150px;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;line-height:1.45;resize:vertical}
+.tplprev{white-space:pre-wrap;background:var(--field);border:1px dashed var(--line);border-radius:8px;padding:10px;font-size:14px;margin-top:8px}
+.varchips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.varchips .chip{font-size:12px;padding:3px 10px}
+
+/* Configurações em abas */
+.savebar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.dirty{font-size:13px;font-weight:600;color:#b45309}
+.cfgtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.cfgtabs button{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;color:var(--mut)}
+.cfgtabs button:hover{border-color:var(--mut)}
+.cfgtabs button[aria-selected="true"]{background:var(--red);border-color:var(--red);color:var(--red-fg)}
+
+/* Frota: linha de documento */
+.docrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;align-items:end;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
+
+/* Calculadora do frete dentro de "Serviços e valores" */
+.calc{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.calc>summary{cursor:pointer;font:700 14px var(--f-disp);letter-spacing:.08em;text-transform:uppercase;color:var(--red)}
+
+/* Filtros da lista de OS */
+.filterbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px}

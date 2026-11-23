@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>FB Fretes e Mudanças</title>
+  <meta name="theme-color" content="#d7141a">
+  <script>try{var t=localStorage.getItem("fb-theme");if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="64x64" href="./assets/favicon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="./css/theme.css">
+  <link rel="stylesheet" href="./css/layout.css">
+  <link rel="stylesheet" href="./css/charts.css">
+  <link rel="stylesheet" href="./css/forms.css">
+  <link rel="stylesheet" href="./css/sheet.css">
+  <link rel="stylesheet" href="./css/orc.css">
+  <link rel="stylesheet" href="./css/agenda.css">
+  <link rel="stylesheet" href="./css/kit.css">
+  <link rel="stylesheet" href="./css/login.css">
+</head>
+<body>
+  <!-- Tudo é desenhado pelo router: login (público) ou shell + página (protegido). -->
+  <div id="app"></div>
+  <div id="toast" hidden></div>
+  <script type="module" src="./src/routes/router.js"></script>
+</body>
+</html>

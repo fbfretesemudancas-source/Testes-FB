@@ -1,0 +1,86 @@
+/* Folha do Orçamento: imagem vertical 768 x 1152 (2:3), no estilo do modelo aprovado */
+.orc{width:768px;height:1152px;background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;font-family:'Barlow',sans-serif;color:#14171a;transform-origin:0 0}
+.orc *{box-sizing:border-box;margin:0;padding:0}
+.orc .ic{display:block;flex:none}
+
+/* Cabeçalho */
+.orc .oh{position:relative;height:204px;background:#000;flex:none;overflow:hidden}
+.orc .oh .lg{position:absolute;left:30px;top:24px;width:410px;height:auto}
+.orc .oh .tk{position:absolute;right:0;top:0;width:360px;height:208px}
+.orc .oh .tk img{display:block;width:100%;height:auto}
+.orc .oh .tk .fade{position:absolute;left:0;top:0;bottom:0;width:150px;background:linear-gradient(90deg,#000 0%,rgba(0,0,0,0) 100%)}
+.orc .sl{position:absolute;background:#d7141a;transform:skewX(-32deg)}
+.orc .oh .sl.a{left:470px;top:-20px;width:30px;height:260px}
+.orc .oh .sl.b{left:514px;top:-20px;width:8px;height:260px}
+.orc .oh .sw{position:absolute;left:0;bottom:14px;width:360px;height:5px;background:linear-gradient(90deg,#d7141a,rgba(215,20,26,0))}
+
+/* Faixa ORÇAMENTO */
+.orc .ob{flex:none;margin:10px 14px 0;height:62px;border-radius:6px;display:flex;align-items:center;gap:14px;padding:0 22px;color:#fff;background:linear-gradient(104deg,#e0161c 0%,#b30f15 78%,#000 78.3%,#000 100%)}
+.orc .ob .t{flex:1;font:italic 700 44px/1 'Barlow Condensed','Barlow',sans-serif;letter-spacing:.02em;text-transform:uppercase}
+.orc .ob .n{border-left:2px solid rgba(255,255,255,.85);padding-left:16px;line-height:1.2}
+.orc .ob .n b{display:block;font:700 22px 'Barlow Condensed','Barlow',sans-serif}
+.orc .ob .n small{font:500 12.5px 'Barlow',sans-serif}
+
+/* Miolo: espaço sobrando é distribuído entre os blocos */
+.orc .om{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;padding:6px 14px;min-height:0}
+.orc .oc{border:1px solid #cfd2d6;border-radius:9px;background:linear-gradient(#fff,#f0f1f2);overflow:hidden}
+.orc .k{display:block;color:#d7141a;font:700 14px 'Barlow Condensed','Barlow',sans-serif;letter-spacing:.05em;text-transform:uppercase}
+
+.orc .cl{display:flex;align-items:center;gap:18px;padding:10px 22px}
+.orc .cl .k{font-size:16px}
+.orc .cl .nm{font:700 25px/1.15 'Barlow',sans-serif}
+.orc .cl .ph{display:flex;align-items:center;gap:7px;font:500 16px 'Barlow',sans-serif;margin-top:2px}
+
+.orc .tp .hd{background:#e6e7e8;padding:6px 14px;display:flex;align-items:center;gap:8px;font:700 17px 'Barlow Condensed','Barlow',sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.orc .tp .bd{display:grid;grid-template-columns:1fr 1fr;padding:9px 0}
+.orc .tp .col{display:flex;align-items:center;gap:12px;padding:2px 18px;min-width:0}
+.orc .tp .col+.col{border-left:1px solid #222}
+.orc .tp .col b{display:block;font:700 17px/1.2 'Barlow',sans-serif}
+.orc .tp .col span{display:block;font:500 13.5px 'Barlow',sans-serif;color:#333}
+
+.orc .sv{background:#fff}
+.orc .sv .hd{background:#0a0a0a;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:8px 16px;font:700 18px 'Barlow Condensed','Barlow',sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.orc .sv .hd span{display:flex;align-items:center;gap:10px}
+.orc .sv .r{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 18px;height:31px;font:500 17px 'Barlow',sans-serif;border-bottom:1px solid #dcdfe2;background:#fff}
+.orc .sv .r span{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.orc .sv .r b{font:700 17px 'Barlow',sans-serif;white-space:nowrap}
+.orc .sv .r.st{background:#d9dbdd;height:34px}
+.orc .sv .r.st span{font-weight:700}
+.orc .sv .r.dc{color:#0f7a35;border-bottom:0}
+.orc .sv .r.dc span{font-weight:700}
+.orc .sv .r.dc b{color:#0f7a35}
+
+/* muitos serviços: linhas mais compactas para caber tudo na imagem */
+.orc .sv.dn .r{height:27px;font-size:16px}
+.orc .sv.dn .r b{font-size:16px}
+.orc .sv.dn .r.st{height:30px}
+
+.orc .ot{display:flex;align-items:center;gap:20px;height:78px;border-radius:9px;padding:0 24px;color:#fff;background:linear-gradient(103deg,#000 0%,#000 86%,#d7141a 86.3%,#d7141a 100%)}
+.orc .ot .rg{width:58px;height:58px;border:2px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.orc .ot .sep{width:3px;height:52px;background:#d7141a;flex:none}
+.orc .ot small{display:block;font:700 18px 'Barlow Condensed','Barlow',sans-serif;letter-spacing:.03em;text-transform:uppercase}
+.orc .ot b{display:block;font:700 52px/1.05 'Barlow',sans-serif}
+
+.orc .cd .tab{display:inline-flex;align-items:center;gap:8px;background:#0a0a0a;color:#fff;padding:5px 28px 5px 14px;border-radius:8px 8px 0 0;font:700 15.5px 'Barlow Condensed','Barlow',sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.orc .cd .oc{border-radius:0 9px 9px 9px;display:grid;grid-template-columns:repeat(3,1fr);padding:11px 0}
+.orc .cd .ci{display:flex;align-items:center;gap:12px;padding:0 16px;min-width:0}
+.orc .cd .ci+.ci{border-left:1px solid #222}
+.orc .cd .ci small{display:block;font:500 14.5px 'Barlow',sans-serif}
+.orc .cd .ci b{display:block;font:700 16.5px/1.15 'Barlow',sans-serif}
+.orc .obs{padding:7px 16px;font:500 13.5px/1.3 'Barlow',sans-serif;max-height:40px;overflow:hidden}
+
+.orc .ok{display:flex;align-items:center;gap:18px;padding:0 24px;height:68px;background:#e9eaeb;border-radius:9px}
+.orc .ok .vb{width:3px;height:44px;background:#d7141a;flex:none}
+.orc .ok b{display:block;font:italic 700 28px/1.1 'Barlow',sans-serif}
+.orc .ok small{display:block;font:italic 500 14px/1.25 'Barlow',sans-serif}
+
+/* Rodapé */
+.orc .of{flex:none;height:92px;background:#000;position:relative;display:flex;align-items:center;padding:0 20px 0 96px;overflow:hidden}
+.orc .of .sl.a{left:-22px;top:-12px;width:54px;height:130px}
+.orc .of .sl.b{left:44px;top:-12px;width:12px;height:130px}
+.orc .of .tx{color:#fff}
+.orc .of .tx b{display:flex;align-items:center;gap:12px;font:italic 700 24px 'Barlow Condensed','Barlow',sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.orc .of .tx b::before,.orc .of .tx b::after{content:"";width:28px;height:2px;background:#d7141a}
+.orc .of .tx small{display:block;font:italic 500 17px 'Barlow',sans-serif;margin-top:2px}
+.orc .of .rt{position:absolute;right:22px;top:0;bottom:0;display:flex;align-items:center;gap:12px;color:#fff;font:600 14px 'Barlow',sans-serif}
+.orc .of .rt .sep{width:2px;height:44px;background:#d7141a}

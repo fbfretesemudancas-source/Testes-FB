@@ -1,0 +1,107 @@
+/* Folha A4 (794 x 1123 px) — extraída do projeto base, sem alterações */
+.sheet{width:794px;height:1123px;background:#fff;color:#111;font-family:'Barlow',Arial,sans-serif;position:relative;overflow:hidden;transform-origin:0 0;display:flex;flex-direction:column;--r:#d7141a;--soft:#efb5b7;--ink:#0c2340}
+.sheet *{box-sizing:border-box;margin:0;padding:0}
+.sheet .hd{background:#000;height:166px;padding:10px 16px 0;display:grid;grid-template-columns:1fr 236px;gap:14px;position:relative}
+.sheet .hd::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--r)}
+.sheet .hl{display:flex;flex-direction:column;gap:8px;min-width:0}
+.sheet .hl1{display:flex;align-items:flex-end;justify-content:space-between;height:100px}
+.sheet .logo{width:300px;height:100px;display:flex;align-items:center}
+.sheet .logo img{height:100px;width:auto;max-width:300px;object-fit:contain;object-position:left center;display:block}
+.sheet .lgrow{display:flex;align-items:center;gap:8px}
+.sheet .fbm{font:italic 400 66px/0.9 'Anton',sans-serif;display:flex;letter-spacing:-2px;transform:skewX(-8deg)}
+.sheet .fbm b{color:var(--r);font-weight:400}
+.sheet .lt{display:flex;flex-direction:column;line-height:1}
+.sheet .lt b{font:italic 700 27px/1 'Barlow Condensed',sans-serif;letter-spacing:.01em}
+.sheet .lt i{font:italic 700 27px/1 'Barlow Condensed',sans-serif;color:var(--r);font-style:italic}
+.sheet .tag3{font:500 8.5px 'Barlow',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#ddd;margin-top:3px}
+.sheet .truck{height:100px;display:flex;align-items:flex-end}
+.sheet .truck img{height:100px;width:auto;max-width:190px;object-fit:contain;display:block}
+.sheet .strip{border:1px solid #7a1013;border-radius:7px;height:46px;display:grid;grid-template-columns:1fr 1.15fr 1fr;color:#fff;align-items:center}
+.sheet .strip>div{padding:0 9px;border-right:1px solid #3a1a1b;height:100%;display:flex;flex-direction:column;justify-content:center;gap:1px}
+.sheet .strip>div:last-child{border:0}
+.sheet .strip b{font:600 14px 'Barlow Condensed',sans-serif;letter-spacing:.02em;white-space:nowrap}
+.sheet .strip small{white-space:nowrap;font:500 7px 'Barlow',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#e4e4e4}
+.sheet .hr{display:flex;flex-direction:column;gap:6px;min-width:0}
+.sheet .ostit{display:grid;grid-template-columns:minmax(0,1fr) 78px;border-radius:7px;overflow:hidden;height:50px}
+.sheet .ostit .a{background:var(--r);color:#fff;display:flex;flex-direction:column;justify-content:center;padding:0 9px}
+.sheet .ostit .a b{white-space:nowrap;font:600 17px/1 'Barlow Condensed',sans-serif;letter-spacing:.02em;text-transform:uppercase}
+.sheet .ostit .a small{font:600 8px 'Barlow',sans-serif;letter-spacing:.07em;text-transform:uppercase}
+.sheet .ostit .b{background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sheet .ostit .b small{font:700 7.5px 'Barlow',Arial,sans-serif;letter-spacing:.05em;color:#222}
+.sheet .ostit .b b{font:700 21px/1.05 'Barlow Condensed',sans-serif;color:var(--r);font-variant-numeric:tabular-nums}
+.sheet .osd{background:#fff;border-radius:7px;flex:1;padding:6px 9px;display:flex;flex-direction:column;justify-content:space-evenly;margin-bottom:10px}
+.sheet .osd .l2{display:flex;gap:8px}
+.sheet .bd{flex:1;padding:9px 9px 10px;display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-height:0}
+.sheet .gr{display:grid;gap:8px}
+.sheet .bx{border:1px solid var(--soft);border-radius:6px;position:relative;padding:15px 9px 6px;min-width:0}
+.sheet .bx>.tg{position:absolute;top:-1px;left:-1px;background:var(--r);color:#fff;font:700 10.5px/1 'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:4px 11px 3px 8px;border-radius:5px 0 9px 0}
+.sheet .ln{display:flex;align-items:flex-end;gap:4px;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:.01em;min-width:0;height:17px}
+.sheet .ln .l{white-space:nowrap;color:#222;padding-bottom:1px}
+.sheet .ln .v{flex:1;border-bottom:1px solid #555;min-height:13px;font:600 10.5px/1.15 'Barlow',sans-serif;color:var(--ink);text-transform:none;padding:0 2px;overflow:hidden;white-space:nowrap;text-overflow:clip;min-width:0}
+.sheet .ln.w{flex:none}
+.sheet .cr{display:grid;gap:8px;grid-template-columns:1fr}
+.sheet .co{display:flex;gap:10px;align-items:center}
+.sheet .co .lg{width:118px;flex:none;display:flex;flex-direction:column;align-items:flex-start}
+.sheet .co .lg .fbm{font-size:48px;color:#111}
+.sheet .co .lg .lt b{color:#111;font-size:14px}.sheet .co .lg .lt i{font-size:14px}
+.sheet .co .lg img{max-width:112px;max-height:80px;width:auto;object-fit:contain}
+.sheet .co .tx{font-size:9.5px;line-height:1.5;font-weight:500}
+.sheet .co .tx b{font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:.03em;text-transform:uppercase}
+.sheet .arrow{align-self:center;font:700 18px/1 'Barlow',sans-serif;color:#111;margin:0 -4px}
+.sheet table.it2{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed}
+.sheet .ith{display:grid;grid-template-columns:34px 1fr 69px;background:#0d0d0d;color:#fff;font:600 9px 'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase;height:25px;align-items:center;text-align:center}
+.sheet .ith .tm{display:flex;flex-direction:column;height:100%;border-left:1px solid #444}
+.sheet .ith .tm span:first-child{flex:1;display:grid;place-items:center;border-bottom:1px solid #444;font-size:8px}
+.sheet .ith .tm div{display:grid;grid-template-columns:repeat(3,1fr);height:11px}
+.sheet .ith .tm div i{font-style:normal;border-left:1px solid #444;font-size:8px;line-height:11px}
+.sheet .ith .tm div i:first-child{border:0}
+.sheet .itr{display:grid;grid-template-columns:34px 1fr 69px;height:23px;border-bottom:1px solid #c9c9c9;border-left:1px solid #c9c9c9;border-right:1px solid #c9c9c9;font:600 10px 'Barlow',sans-serif;color:var(--ink)}
+.sheet .itr>div{display:flex;align-items:center;padding:0 5px;overflow:hidden;white-space:nowrap}
+.sheet .itr>div:first-child{justify-content:center;border-right:1px solid #c9c9c9}
+.sheet .itr .sz3{display:grid;grid-template-columns:repeat(3,1fr);padding:0;border-left:1px solid #c9c9c9}
+.sheet .itr .sz3 span{display:grid;place-items:center}
+.sheet .cb{display:inline-flex;width:10px;height:10px;border:1px solid #333;border-radius:2px;align-items:center;justify-content:center;font:700 8.5px/1 'Barlow',sans-serif;font-style:normal;color:#fff;flex:none}
+.sheet .cb.on{background:var(--r);border-color:var(--r)}
+.sheet .opt{display:flex;align-items:center;gap:5px;font-size:8.2px;font-weight:600;text-transform:uppercase;min-height:16.5px;line-height:1.1}
+.sheet .opt .v{border-bottom:1px solid #555;flex:1;min-height:11px;font:600 10px 'Barlow',Arial,sans-serif;text-transform:none;color:var(--ink);overflow:hidden;white-space:nowrap}
+.sheet .vals .ln{height:19px}
+.sheet .vals .ln .v{font-size:11px}
+.sheet .vtot{background:var(--r);color:#fff;border-radius:6px;padding:5px 8px 7px;margin-top:5px}
+.sheet .vtot small{font:700 9.5px 'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.sheet .vtot div{background:#fff;color:var(--r);border-radius:4px;font:700 17px/1 'Barlow Condensed',sans-serif;padding:4px 7px;margin-top:3px;font-variant-numeric:tabular-nums;height:24px}
+.sheet .pgb{display:flex;flex-direction:column;gap:5px;padding-top:1px}
+.sheet .pix{display:flex;flex-direction:column;align-items:center;gap:2px}
+.sheet .pix img{width:92px;height:92px}
+.sheet .pix .no{width:92px;height:92px;border:1px dashed #999;display:grid;place-items:center;text-align:center;font-size:8px;color:#666;padding:6px}
+.sheet .pix small{font:600 7px 'Barlow',Arial,sans-serif;color:#444;text-align:center;max-width:110px;word-break:break-all}
+.sheet .obs .ln{height:20px}
+.sheet .term{display:grid;grid-template-columns:1.55fr 1fr 1fr;gap:0}
+.sheet .term>div{padding:0 9px;border-right:1px solid var(--soft);min-width:0}
+.sheet .term>div:last-child{border:0}
+.sheet .term b.h{display:block;font:700 9px 'Barlow',sans-serif;text-transform:uppercase;letter-spacing:.02em;margin-bottom:3px}
+.sheet .term p{font-size:7.6px;line-height:1.35;font-weight:500;color:#222}
+.sheet .sgn{height:22px;border-bottom:1px solid #555;margin-top:9px;display:flex;align-items:flex-end;gap:4px}
+.sheet .sgn i{font:700 8px 'Barlow',Arial,sans-serif;font-style:normal;background:var(--r);color:#fff;width:11px;height:11px;display:grid;place-items:center;border-radius:2px;margin-bottom:1px}
+.sheet .ft{background:#0d0d0d;color:#fff;margin-top:auto;display:grid;grid-template-columns:auto auto auto 1fr;gap:9px;padding:8px 14px 6px;height:100px}
+.sheet .qc{background:#1a1a1a;border:1px solid #333;border-radius:6px;width:92px;padding:4px 4px 3px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.sheet .qc b{font:700 7.5px/1.1 'Barlow',sans-serif;text-align:center;text-transform:uppercase;letter-spacing:.02em}
+.sheet .qc img{width:54px;height:54px;border-radius:2px;background:#fff}
+.sheet .qc .soon{width:54px;height:54px;background:#fff;color:#111;display:grid;place-items:center;font:700 10px/1.1 'Barlow Condensed',Arial,sans-serif;text-align:center;border-radius:2px;text-transform:uppercase}
+.sheet .qc small{font:500 6.5px 'Barlow',Arial,sans-serif;color:#ccc;text-align:center;line-height:1.1}
+.sheet .why{border:1px solid #7a1013;border-radius:6px;padding:6px 10px;display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center}
+.sheet .why h4{font:700 12.5px/1.1 'Barlow Condensed',sans-serif;letter-spacing:.04em;text-transform:uppercase;grid-column:1/-1}
+.sheet .why ul{list-style:none;display:flex;flex-direction:column;gap:1.5px}
+.sheet .why li{font:600 8.3px 'Barlow',Arial,sans-serif;display:flex;gap:6px;align-items:center;text-transform:uppercase}
+.sheet .why li::before{content:"✓";background:var(--r);width:11px;height:11px;border-radius:50%;display:grid;place-items:center;font-size:7px;flex:none}
+.sheet .why .lg2{display:flex;flex-direction:column;align-items:flex-end}
+.sheet .why .lg2 .fbm{font-size:38px}
+.sheet .why .lg2 .lt b,.sheet .why .lg2 .lt i{font-size:13px}
+.sheet .why .lg2 img{max-width:110px;max-height:50px;width:auto;object-fit:contain;display:block}
+.sheet .bar{background:var(--r);color:#fff;height:19px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font:700 10.5px 'Barlow Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+
+/* A folha é um "papel": tem que ficar igual nos temas claro e escuro e no PDF/imagem.
+   Duas classes dela têm o mesmo nome de classes globais do app e herdavam estilo de lá:
+   .h  (linha de lista: fundo do tema, borda e cantos)  -> títulos "Assinatura…" e "Termo…" ficavam em pílula escura, com texto escuro
+   .bar (coluna de gráfico: max-width 30px)              -> a faixa vermelha do rodapé ficava com 30px de largura */
+.sheet .h{display:block;background:none;border:0;border-radius:0;padding:0;gap:0;color:#111}
+.sheet .bar{flex:none;box-sizing:border-box;width:100%;max-width:none;min-height:19px;border-radius:0;opacity:1}

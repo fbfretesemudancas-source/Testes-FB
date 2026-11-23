@@ -1,0 +1,80 @@
+/* Tela de login: cartão de vidro com borda neon, fundo por tema (escuro/claro) e por aparelho (desktop/celular).
+   Tudo neste arquivo, porque os caminhos das imagens são relativos a ele. */
+.lg-page{
+  /* claro (padrão do aparelho sem preferência) */
+  --lg-img-d:url(../assets/login/bg-claro-desktop.jpg); --lg-img-m:url(../assets/login/bg-claro-celular.jpg); --lg-base:#e6e8ea;
+  --lg-mark:url(../assets/login/fb-claro.png);
+  --c-bg:rgba(255,255,255,.80); --c-bd:rgba(215,20,26,.65); --c-glow:0 0 0 1px rgba(215,20,26,.20),0 10px 44px rgba(215,20,26,.28),inset 0 0 22px rgba(255,255,255,.55);
+  --c-fg:#14171a; --c-mut:#4f5861; --c-tag:#4f5861; --c-fld:rgba(255,255,255,.88); --c-fld-bd:rgba(20,23,26,.20); --c-ph:#6b747d; --c-ic:#14171a; --c-line:rgba(20,23,26,.22);
+  --c-name:#14171a; --c-btn-glass:rgba(255,255,255,.78);
+  min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px 16px;position:relative;
+  background:var(--lg-base) var(--lg-img-d) center/cover no-repeat;color:var(--c-fg);
+}
+@media (max-width:767px){.lg-page{background-image:var(--lg-img-m);padding:20px 14px}}
+/* escuro: por preferência do aparelho (se não houver escolha) ou por escolha */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lg-page{
+  --lg-img-d:url(../assets/login/bg-escuro-desktop.jpg); --lg-img-m:url(../assets/login/bg-escuro-celular.jpg); --lg-base:#050505; --lg-mark:url(../assets/login/fb-escuro.png);
+  --c-bg:rgba(8,8,10,.74); --c-bd:rgba(255,45,45,.80); --c-glow:0 0 0 1px rgba(255,30,30,.35),0 0 30px rgba(255,20,20,.45),inset 0 0 24px rgba(255,20,20,.18);
+  --c-fg:#fff; --c-mut:#a9a9ad; --c-tag:#b9b9bd; --c-fld:rgba(255,255,255,.055); --c-fld-bd:rgba(255,255,255,.13); --c-ph:#8b8b90; --c-ic:#fff; --c-line:rgba(255,255,255,.20);
+  --c-name:#fff; --c-btn-glass:rgba(20,20,22,.7)}}
+:root[data-theme="dark"] .lg-page{
+  --lg-img-d:url(../assets/login/bg-escuro-desktop.jpg); --lg-img-m:url(../assets/login/bg-escuro-celular.jpg); --lg-base:#050505; --lg-mark:url(../assets/login/fb-escuro.png);
+  --c-bg:rgba(8,8,10,.74); --c-bd:rgba(255,45,45,.80); --c-glow:0 0 0 1px rgba(255,30,30,.35),0 0 30px rgba(255,20,20,.45),inset 0 0 24px rgba(255,20,20,.18);
+  --c-fg:#fff; --c-mut:#a9a9ad; --c-tag:#b9b9bd; --c-fld:rgba(255,255,255,.055); --c-fld-bd:rgba(255,255,255,.13); --c-ph:#8b8b90; --c-ic:#fff; --c-line:rgba(255,255,255,.20);
+  --c-name:#fff; --c-btn-glass:rgba(20,20,22,.7)}
+
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);border:0;white-space:nowrap}
+.lg-card{width:100%;max-width:500px;padding:28px 30px 24px;border-radius:22px;background:var(--c-bg);border:1px solid var(--c-bd);box-shadow:var(--c-glow);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.lg-ic{width:24px;height:24px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* marca */
+.lg-brand{display:flex;align-items:center;gap:16px;margin-bottom:26px}
+.lg-mark{width:84px;height:50px;flex:none;background:var(--lg-mark) left center/contain no-repeat}
+.lg-div{width:2px;height:48px;background:#e3141c;flex:none;box-shadow:0 0 10px rgba(227,20,28,.6)}
+.lg-name{font:italic 700 27px/1 'Barlow Condensed','Barlow',sans-serif;letter-spacing:.01em;text-transform:uppercase;color:var(--c-name);white-space:nowrap}
+.lg-name b{color:#e3141c;font-weight:700}
+.lg-tag{margin-top:6px;font:500 12px/1.2 'Barlow',sans-serif;letter-spacing:.2em;color:var(--c-tag);text-transform:uppercase}
+
+/* título */
+.lg-title{display:flex;gap:14px;align-items:center;margin-bottom:22px}
+.lg-title .lg-ic{width:38px;height:38px;color:#e3141c}
+.lg-title h2{margin:0;font:700 25px/1.1 'Barlow',sans-serif;text-transform:uppercase;letter-spacing:.01em;color:var(--c-fg)}
+.lg-title p{margin:3px 0 0;font-size:14.5px;color:var(--c-mut)}
+
+/* campos */
+.lg-fld{display:flex;align-items:center;gap:14px;height:58px;margin-bottom:16px;padding:0 16px;border-radius:14px;background:var(--c-fld);border:1px solid var(--c-fld-bd);color:var(--c-ic);transition:border-color .15s,box-shadow .15s}
+.lg-fld:focus-within{border-color:#e3141c;box-shadow:0 0 0 3px rgba(227,20,28,.25)}
+.lg-fld input{flex:1;min-width:0;height:100%;border:0;outline:0;background:none;font:500 18px 'Barlow',sans-serif;color:var(--c-fg)}
+.lg-fld input::placeholder{color:var(--c-ph)}
+.lg-fld input:-webkit-autofill{-webkit-text-fill-color:var(--c-fg);transition:background-color 9999s}
+.lg-show{border:0;background:none;cursor:pointer;color:var(--c-fg);font:700 15px 'Barlow',sans-serif;text-decoration:underline;padding:8px 2px;white-space:nowrap}
+.lg-show:focus-visible,.lg-link:focus-visible,.lg-btn:focus-visible,.lg-theme:focus-visible{outline:2px solid #fff;outline-offset:2px;box-shadow:0 0 0 4px #e3141c}
+
+/* botão e links */
+.lg-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:58px;margin-top:6px;border:0;border-radius:14px;cursor:pointer;color:#fff;
+  font:700 21px 'Barlow',sans-serif;background:linear-gradient(180deg,#ff2530,#d3000e);box-shadow:0 8px 24px rgba(255,10,25,.42),inset 0 1px 0 rgba(255,255,255,.3)}
+.lg-btn:hover{filter:brightness(1.07)}.lg-btn:active{transform:translateY(1px)}
+.lg-btn[disabled]{opacity:.65;cursor:wait}
+.lg-btn .lg-ic{width:26px;height:26px;stroke-width:2.4}
+.lg-forgot{display:flex;align-items:center;gap:14px;margin-top:20px}
+.lg-forgot i{flex:1;height:1px;background:var(--c-line)}
+.lg-link{border:0;background:none;cursor:pointer;color:var(--c-fg);font:600 15.5px 'Barlow',sans-serif;text-decoration:underline;padding:6px 2px}
+.lg-msg{min-height:22px;margin-top:12px;font-size:14px;font-weight:600;text-align:center}
+.lg-msg.err{color:#ff5a5f}.lg-msg.ok{color:#43d9a0}
+:root:not([data-theme="dark"]) .lg-msg.err{color:#b42318}:root:not([data-theme="dark"]) .lg-msg.ok{color:#0f7a55}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lg-msg.err{color:#ff5a5f}:root:not([data-theme="light"]) .lg-msg.ok{color:#43d9a0}}
+
+/* alternar tema */
+.lg-theme{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:14px;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;cursor:pointer;
+  color:var(--c-fg);background:var(--c-btn-glass);border:1px solid var(--c-bd);box-shadow:0 0 16px rgba(227,20,28,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.lg-theme .lg-ic{width:22px;height:22px}
+
+@media (max-width:420px){
+  .lg-card{padding:22px 18px 20px;border-radius:18px}
+  .lg-brand{gap:12px;margin-bottom:20px}.lg-mark{width:62px;height:38px}.lg-div{height:38px}
+  .lg-name{font-size:21px}.lg-tag{font-size:9.5px;letter-spacing:.14em}
+  .lg-title .lg-ic{width:32px;height:32px}.lg-title h2{font-size:21px}.lg-title p{font-size:13.5px}
+  .lg-fld{height:54px;gap:12px}.lg-fld input{font-size:17px}.lg-btn{height:54px;font-size:19px}
+}
+@media (max-width:340px){.lg-name{font-size:18px}.lg-tag{display:none}}

@@ -1,0 +1,117 @@
+/* ==========================================================================
+   Kit de interface: rolagem, autocomplete, botões, barra de busca/filtros, linhas de lista.
+   Tudo usa os tokens do tema (claro e escuro). Para uma tela nova, veja README → "Kit de interface".
+   ========================================================================== */
+:root{
+  --ink:#1b1f23; --ink-fg:#fff;          /* botão escuro (Buscar, Aplicar) e dicas */
+  --wa:#25d366; --wa-fg:#06361a;         /* WhatsApp */
+  --ok-fg:#fff;
+  --sb-thumb:color-mix(in srgb,var(--mut) 42%,transparent);
+  --pop-shadow:0 14px 34px rgba(15,17,19,.22),0 2px 6px rgba(15,17,19,.12);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#2f353c;--ok-fg:#06261b;--pop-shadow:0 14px 34px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4)}}
+:root[data-theme="dark"]{--ink:#2f353c;--ok-fg:#06261b;--pop-shadow:0 14px 34px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4)}
+
+/* ---------- Barras de rolagem (finas, na cor do tema; só aparecem quando há o que rolar) ---------- */
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--sb-thumb);border-radius:999px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:var(--red);background-clip:content-box;border:2px solid transparent}
+::-webkit-scrollbar-corner{background:transparent}
+@supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:var(--sb-thumb) transparent}}
+/* menu lateral (sempre escuro): rolagem na borda ESQUERDA do menu. O truque: o contêiner rola em "rtl" e os filhos voltam para "ltr". */
+.side nav:not(.foot){direction:rtl;--sb-thumb:#3b3b41}
+.side nav:not(.foot)>*{direction:ltr}
+.side nav:not(.foot)::-webkit-scrollbar{width:8px}
+@supports not selector(::-webkit-scrollbar){.side nav:not(.foot){scrollbar-color:#3b3b41 transparent}}
+
+/* ---------- Autocomplete próprio (substitui o balão nativo do datalist) ---------- */
+.combo-pop{position:fixed;z-index:90;overflow-y:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--pop-shadow);padding:4px;font-size:14px}
+.combo-pop [role=option]{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:7px;cursor:pointer;border-left:3px solid transparent}
+.combo-pop [role=option].on{background:var(--red-soft);border-left-color:var(--red)}
+.combo-pop .cb-m{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.combo-pop .cb-s{color:var(--mut);white-space:nowrap;font-variant-numeric:tabular-nums}
+.combo-pop mark{background:none;color:var(--red);font-weight:800}
+
+/* ---------- Botões: ícone + cor por finalidade ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;text-decoration:none;white-space:nowrap;transition:background .15s,border-color .15s,color .15s,filter .15s}
+a.btn{color:var(--fg)}
+.btn .ico{width:1.15em;height:1.15em}
+.btn.sm .ico{width:1.1em;height:1.1em}
+.btn.ico-only{padding:0;width:40px}
+.btn.sm.ico-only{width:32px}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:var(--ink-fg)}
+.btn.dark:hover{filter:brightness(1.25);border-color:var(--ink)}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:var(--wa-fg)}
+.btn.wa:hover{filter:brightness(1.07);border-color:var(--wa)}
+.btn.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,var(--line));background:color-mix(in srgb,var(--ok) 9%,var(--panel))}
+.btn.ok:hover{background:var(--ok);border-color:var(--ok);color:var(--ok-fg)}
+.btn.danger{color:var(--red);border-color:color-mix(in srgb,var(--red) 42%,var(--line))}
+.btn.danger:hover{background:var(--red-soft);border-color:var(--red)}
+.btn.danger.armed{background:var(--red);border-color:var(--red);color:var(--red-fg)}
+.btn.pri:hover{border-color:var(--red)}
+.btn.ico-only.on{border-color:var(--red);color:var(--red);background:var(--red-soft)} /* botão de ícone "ligado" (ex.: mapa aberto) */
+.btn[hidden]{display:none!important}
+.bg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
+.bg+.bg{margin-left:4px;padding-left:10px;border-left:1px solid var(--line)}
+/* dica ao passar o mouse (botões só de ícone) */
+[data-tip]{position:relative}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:var(--ink);color:var(--ink-fg);font:600 12px/1.3 var(--f-body);padding:5px 9px;border-radius:6px;width:max-content;max-width:min(240px,80vw);white-space:normal;text-align:left;pointer-events:none;z-index:70;box-shadow:var(--pop-shadow)}
+/* a dica é centralizada; o tips.js marca data-tip-pos quando ela passaria da borda da tela */
+[data-tip][data-tip-pos="end"]:hover::after,[data-tip][data-tip-pos="end"]:focus-visible::after{left:auto;right:0;transform:none}
+[data-tip][data-tip-pos="start"]:hover::after,[data-tip][data-tip-pos="start"]:focus-visible::after{left:0;transform:none}
+@media (hover:none){[data-tip]::after{display:none!important}}
+
+/* barra de ações da página: criar à esquerda, exportar/voltar à direita */
+.abar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px}
+.abar-l,.abar-r{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
+.abar .bg+.bg{margin-left:0;padding-left:0;border-left:0} /* nas barras, o grupo se separa só pelo espaço (o divisor fica feio quando quebra de linha) */
+.abar-r{margin-left:auto}
+.abar.tight{margin-bottom:8px}
+
+/* ---------- Busca + filtros recolhíveis ---------- */
+.lbar{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:12px}
+.lbar-row{display:flex;gap:8px;align-items:stretch}
+.lb-search{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:0 12px;min-height:40px;transition:border-color .15s,box-shadow .15s}
+.lb-search:focus-within{border-color:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 18%,transparent)}
+.lb-search input{flex:1;min-width:0;border:0;background:none;outline:none!important;padding:8px 0;font-size:15px}
+.lb-search .ico{color:var(--mut);width:18px;height:18px}
+.lb-search input::-webkit-search-cancel-button{display:none}
+.lb-fill{display:none}
+.lbar.nosearch{background:none;border:0;padding:0;margin-bottom:12px}
+.lbar.nosearch .lb-panel{background:var(--panel)}
+.lb-toggle .lb-chev{display:inline-flex;transition:transform .18s}
+.lb-toggle .lb-chev .ico{width:1em;height:1em}
+.lb-toggle.open .lb-chev{transform:rotate(180deg)}
+.lb-toggle.on,.lb-toggle.open{border-color:var(--red);color:var(--red)}
+.lb-count{min-width:20px;height:20px;border-radius:10px;background:var(--red);color:var(--red-fg);font:700 12px/20px var(--f-body);text-align:center;padding:0 5px}
+.lb-panel{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:var(--field);padding:12px 14px}
+.lb-title{font:700 15px var(--f-disp);letter-spacing:.04em;margin-bottom:10px}
+.lb-grid{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:flex-start}
+.lb-sec{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lb-lbl{font-size:12px;font-weight:700;color:var(--mut)}
+.lb-fields{display:flex;flex-wrap:wrap;gap:10px}
+.lb-fields .f{min-width:150px}
+.lb-fields .f input,.lb-fields .f select{background:var(--panel)}
+.lb-sec .chips{margin:0}
+.lb-sec .chip{background:var(--panel)}
+.lb-sec .chip[aria-pressed="true"]{background:var(--red)}
+.lb-foot{display:flex;justify-content:flex-end;margin-top:12px}
+@media (max-width:700px){
+  .abar .bg+.bg{margin-left:0;padding-left:0;border-left:0}
+  .lbar-row{flex-wrap:wrap}
+  .lb-search{order:-1;flex:1 1 100%}
+  .lb-toggle{flex:1}.lb-go{flex:1}
+  .lb-fields .f{flex:1 1 140px}
+}
+
+/* ---------- Linha de lista: informações à esquerda, ações à direita, agrupadas por finalidade ---------- */
+.h .b{margin-left:auto}
+.h .b .bg{justify-content:flex-end}
+@media (max-width:900px){.h .b{margin-left:0;flex-basis:100%;justify-content:flex-start;gap:8px}.h .b .bg{justify-content:flex-start}.h .b .bg+.bg{margin-left:0;padding-left:0;border-left:0}}
+
+/* ---------- Pequenos acertos de contexto ---------- */
+.savebar{gap:10px}
+.dirty{display:inline-flex;align-items:center;gap:6px}
+.agbar .btn.sm{min-height:34px}
+.shortcuts a.btn{gap:8px}
