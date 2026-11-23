@@ -4,7 +4,8 @@
 import { esc, brl, num, toast } from "../../js/utils.js";
 import { addrQuery, hasAddr, geocode, osrmRoute, estimateLegs, parseCoord, mapsDirUrl, mapsEmbedUrl, PRECISAO, googleRoute, googleErro } from "../../js/geo.js";
 import { calcPreco } from "../../js/domain.js";
-import { precoDoVeiculo } from "../../js/frota.js";
+import { equipePagHTML } from "./equipePag.js";
+import { precoDoVeiculo, faltaNoVeiculo } from "../../js/frota.js";
 import { fillForm } from "./formKit.js";
 import { icon } from "./icons.js";
 
@@ -40,12 +41,11 @@ export const distanciaHTML = () => `
 export const calculadoraHTML = () => `
   <details class="calc" open><summary>Calculadora do frete (opcional)</summary>
     <p class="note" id="calcSrc" style="margin:8px 0 10px"></p>
-    <div class="row"><label class="f"><span>Horas de serviço (carga + descarga)</span><input data-k="calc.horas" id="calcHoras" inputmode="decimal"></label>
-      <label class="f"><span>Ajudantes</span><input data-k="calc.ajudantes" id="calcAj" inputmode="numeric"></label></div>
+    <div style="margin:0 0 12px">${equipePagHTML()}</div>
     <div class="row"><label class="f"><span>Pedágio / extras (R$)</span><input data-k="calc.extras" data-money inputmode="decimal" placeholder="0,00"></label><span></span></div>
     <div id="calcOut"></div>
     <div class="actions" style="margin-top:10px"><button class="btn pri js-apply" type="button">${icon("check")}<span>Aplicar nas linhas de serviço</span></button></div>
-    <p class="note" style="margin-top:8px">Preenche as linhas “Frete e transporte”, “Ajudante(s)” e “Pedágio / taxas” (cria se não existirem) e não apaga os outros serviços. Consumo, manutenção por km e custo fixo vêm da ficha do veículo (Frota); combustível, hora de trabalho, margem e mínimo, das Configurações.</p></details>`;
+    <p class="note" style="margin-top:8px">Preenche as linhas “Frete e transporte”, “Ajudante(s)” e “Pedágio / taxas” (cria se não existirem) e não apaga os outros serviços. Consumo e manutenção por km vêm da ficha do veículo (Frota); combustível, margem e arredondamento, das Configurações; a mão de obra, do valor por frete de cada funcionário da equipe (ficha, ajustável acima). Não há valor mínimo.</p></details>`;
 
 /** Liga distância e calculadora ao orçamento O. `fleet` = fichas de veículos. Devolve { refresh }. */
 export function bindPricing(view, O, cfg, { onChange, fleet = [] }) {
@@ -63,9 +63,7 @@ export function bindPricing(view, O, cfg, { onChange, fleet = [] }) {
   const manualKm = () => O.calc.km !== "" && num(O.calc.km) > 0;
   const eff = () => ({
     km: manualKm() ? O.calc.km : (O.rota ? r1(O.rota.total * (1 + folga() / 100)) : 0),
-    horas: O.calc.horas !== "" ? O.calc.horas : cfg.preco.horasServico,
-    ajudantes: O.calc.ajudantes !== "" ? O.calc.ajudantes : cfg.preco.ajudantes,
-    extras: O.calc.extras, minViagem: O.rota ? O.rota.min : 0 });
+    extras: O.calc.extras, equipe: (O.pagEq || []).map(x => ({ funcao: x.funcao, valor: x.valor })) });
 
   function rotaHTML() {
     const R = O.rota; if (!R) return '<p class="note">Ainda não calculada. Preencha os endereços de carga e descarga e toque em “Calcular distância”.</p>';
@@ -84,18 +82,25 @@ export function bindPricing(view, O, cfg, { onChange, fleet = [] }) {
       (manualKm() ? `<div class="banner" style="margin-top:8px;background:var(--field);border-color:var(--line)">O preço está usando <b>${kmTxt(num(O.calc.km))}</b>, o valor que você digitou, e não os ${kmTxt(R.total)} calculados.</div>` : "") +
       (R.fonte === "estimativa" ? '<p class="note" style="margin-top:6px">Estimativa em linha reta × fator (o serviço de rotas não respondeu). Digite o total de km real abaixo se souber.</p>' : "");
   }
+  const faltas = () => (O.veiculo && veh() ? faltaNoVeiculo(veh()) : ["veículo"]); // o que impede de calcular (veículo e dados dele)
   function calcHTML() {
-    const e = eff(), pv = P(), r = calcPreco(pv.preco, e), row = (t, v, c = "") => `<div class="${c}"><span>${t}</span><b>${v}</b></div>`;
+    const f = faltas(), v = veh();
+    if (f[0] === "veículo") return '<div class="banner">Escolha o <b>veículo</b> em “Agendamento” para calcular o frete: o consumo e a manutenção por km vêm da ficha dele (Frota).</div>';
+    if (f.length) return `<div class="banner">O veículo <b>${esc(v.placa)}</b> está sem ${esc(f.join(" e "))} na ficha. <a href="#/frota?id=${esc(v._id)}" style="color:var(--red);font-weight:700">Preencha em Frota</a> para calcular o frete.</div>`;
+    const e = eff(), pv = P(), r = calcPreco(pv.preco, e), row = (t, v2, c = "") => `<div class="${c}"><span>${t}</span><b>${v2}</b></div>`, sec = t => `<h4 class="calc-h">${t}</h4>`;
+    const mo = (O.pagEq || []).length ? O.pagEq.map(x => row(`${esc(x.nome)} <small>(${esc(x.funcao || "sem função")}) · valor fixo por frete</small>`, brl(num(x.valor)))).join("") : row("Mão de obra <small>(nenhum funcionário por frete na equipe)</small>", brl(0));
+    const linhas = r.linhas.length ? r.linhas.map(l => `<tr><td>${esc(l.d)}</td><td>${brl(l.custo)}</td><td>${l.semMargem ? "<small>sem margem</small>" : brl(l.comMargem)}</td><td><b>${brl(l.v)}</b></td></tr>`).join("") : '<tr><td colspan="4"><small>Sem custos ainda: informe os km e a equipe.</small></td></tr>';
     return `<div class="brk">${r.km ? "" : '<div class="banner">Sem distância: calcule a rota acima ou digite o total de km.</div>'}
+      ${sec("1 · Custos do frete")}
       ${row(`Combustível <small>(${kmTxt(r.km)} ÷ ${esc(pv.preco.consumo)} km/L × R$ ${esc(cfg.preco.combustivel)})</small>`, brl(r.combustivel))}
       ${row(`Manutenção e desgaste <small>(${kmTxt(r.km)} × R$ ${esc(pv.preco.manutencaoKm)}/km)</small>`, brl(r.manutencao))}
-      ${row(`Motorista <small>(${String(r1(r.horas)).replace(".", ",")} h × R$ ${esc(cfg.preco.horaMotorista)})</small>`, brl(r.motorista))}
-      ${row(`Ajudantes <small>(${r.aj} × ${String(r1(r.horas)).replace(".", ",")} h × R$ ${esc(cfg.preco.horaAjudante)})</small>`, brl(r.ajudantes))}
-      ${row("Custo fixo do serviço", brl(r.fixo))}${row("Pedágio / extras", brl(r.extras))}
-      ${row("Custo total", brl(r.custo), "tt")}${row(`Margem de lucro (${esc(cfg.preco.margem)}%)`, "+ " + brl(Math.max(0, r.preco - r.custo)))}
+      ${mo}${row("Pedágio / taxas", brl(r.extras))}
+      ${row("Custo total", brl(r.custo), "tt")}
+      ${sec("2 · Como vira cada linha de serviço")}
+      <div class="calc-scroll"><table class="calc-lines"><thead><tr><th>Linha de serviço</th><th>Custo</th><th>+ margem (${esc(cfg.preco.margem)}%)</th><th>Valor na linha</th></tr></thead><tbody>${linhas}</tbody></table></div>
+      <p class="note" style="margin:4px 0 8px">Cada valor é arredondado para cima, em múltiplos de R$ ${esc(cfg.preco.arredondar)}. Pedágio e taxas entram sem margem. “Aplicar nas linhas de serviço” grava exatamente a última coluna.</p>
       ${row("Preço do frete sugerido", brl(r.preco), "big")}
-      ${row("Lucro estimado", `${brl(r.lucro)} <small>(${String(r1(r.margemReal)).replace(".", ",")}% sobre o custo)</small>`)}
-      ${r.abaixoMin ? `<div class="banner" style="margin-top:8px">Aplicado o valor mínimo de R$ ${esc(cfg.preco.minimo)}.</div>` : ""}</div>`;
+      ${row("Lucro estimado", `${brl(r.lucro)} <small>(${String(r1(r.margemReal)).replace(".", ",")}% sobre o custo)</small>`)}</div>`;
   }
   function refresh() {
     const v = veh(), pv = P();
@@ -110,10 +115,10 @@ export function bindPricing(view, O, cfg, { onChange, fleet = [] }) {
     if (saidaOn() && !$("#saidaBox").open) $("#saidaBox").open = true;
     $(".js-saida-clear").hidden = !(saidaOn() || parcial);
     $("#rotaOut").innerHTML = rotaHTML(); $("#calcOut").innerHTML = calcHTML();
-    $("#calcSrc").textContent = v ? `Veículo ${v.placa}${v.nome ? " (" + v.nome + ")" : ""}: consumo ${pv.fonte.consumo === "veículo" ? "da ficha" : "padrão"}, manutenção por km ${pv.fonte.manutencaoKm === "veículo" ? "da ficha" : "padrão"}, custo fixo ${pv.fonte.custoFixo === "veículo" ? "da ficha" : "padrão"}.`
-      : "Sem veículo escolhido (ou sem ficha em Frota): usando os valores padrão das Configurações.";
+    const f = faltas();
+    $("#calcSrc").textContent = !f.length ? `Veículo ${v.placa}${v.nome ? " (" + v.nome + ")" : ""}: consumo ${pv.preco.consumo} km/L e manutenção R$ ${pv.preco.manutencaoKm}/km, da ficha. Combustível, margem e arredondamento vêm das Configurações; a mão de obra, da equipe.` : "";
+    $(".js-apply").disabled = f.length > 0;
     $("#calcKm").placeholder = O.rota ? String(r1(O.rota.total * (1 + folga() / 100))).replace(".", ",") + " (da rota)" : "da rota";
-    $("#calcHoras").placeholder = cfg.preco.horasServico + " (padrão)"; $("#calcAj").placeholder = cfg.preco.ajudantes + " (padrão)";
   }
 
   $(".js-rota").addEventListener("click", async () => {
@@ -214,6 +219,7 @@ export function bindPricing(view, O, cfg, { onChange, fleet = [] }) {
 
   const MATCH = [[/^frete/i, "Frete"], [/^ajudante/i, "Ajudante"], [/^ped[aá]gio/i, "Ped"]];
   $(".js-apply").addEventListener("click", () => {
+    if (faltas().length) { toast("Escolha o veículo (com consumo e manutenção na ficha) para calcular o frete."); return; }
     const r = calcPreco(P().preco, eff());
     if (!(r.preco > 0)) { toast("Nada para aplicar: confira os custos."); return; }
     // cada resultado vai para a linha que já tem aquele nome; se não houver, usa a primeira linha livre (sem apagar outros serviços)

@@ -12,7 +12,6 @@ export const labelDesp = k => (TODOS.find(x => x[0] === k) || [0, k])[1];
 export const labelDoc = d => (DOC_TIPOS.find(x => x[0] === d.tipo) || [0, "Documento"])[1] + (d.descricao ? " (" + d.descricao + ")" : "");
 
 export const blankVehicle = () => ({ placa: "", nome: "", modelo: "", ano: "", combustivel: "flex", kmAtual: "", consumo: "", manutencaoKm: "",
-  custoFixo: "0,00", // seguro, IPVA e licenciamento pagos por outra pessoa não entram no custo do frete
   ativo: true, compartilhado: false, // compartilhado = usado também fora dos serviços (km ao retirar/devolver e rateio no Painel)
   obs: "", docs: [] });
 export const blankDoc = () => ({ tipo: "seguro", descricao: "", vencimento: "", valor: "", pagoPor: "outro", link: "", obs: "" });
@@ -88,12 +87,15 @@ export function manutencaoPorKm(desp) {
   const m = new Set(MANUT.map(x => x[0]));
   return desp.filter(r => m.has(r.tipo) && depois(r, L)).reduce((s, r) => s + num(r.valor), 0) / L.rod;
 }
-/** Preço do orçamento: o que o veículo tem preenchido vale mais que o padrão das Configurações. */
+/** Preço do orçamento: consumo e manutenção por km vêm SÓ da ficha do veículo (não há mais padrão nas Configurações). */
 export function precoDoVeiculo(preco, veh) {
-  const out = { ...preco }, fonte = {};
-  ["consumo", "manutencaoKm", "custoFixo"].forEach(k => {
-    const v = veh && veh[k] != null ? String(veh[k]).trim() : "";
-    if (v) { out[k] = veh[k]; fonte[k] = "veículo"; } else fonte[k] = "padrão";
-  });
-  return { preco: out, fonte };
+  return { preco: { ...preco, consumo: veh && veh.consumo != null ? String(veh.consumo) : "", manutencaoKm: veh && veh.manutencaoKm != null ? String(veh.manutencaoKm) : "" } };
+}
+/** O que falta na ficha do veículo para calcular o frete (lista vazia = pode calcular). */
+export function faltaNoVeiculo(veh) {
+  if (!veh) return ["veículo"];
+  const f = [];
+  if (!(num(veh.consumo) > 0)) f.push("consumo (km por litro)");
+  if (!String(veh.manutencaoKm == null ? "" : veh.manutencaoKm).trim()) f.push("manutenção (R$ por km)");
+  return f;
 }

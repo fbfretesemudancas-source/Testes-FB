@@ -7,6 +7,7 @@ import { esc, brl, pad, fmtD, toast, today, slug, waLink, num } from "../../js/u
 import { listAll, saveItem, removeItem, getCfg, nextNum, getFleet, getTeams } from "../firebase/db.js";
 import { ordersToCsv } from "../../js/export.js";
 import { STATUS_OS, TIPOS, INFOS, PGTOS, label, blankOS, normOS, totals, osStatus, waTextOS, blankClient, ofClient } from "../../js/domain.js";
+import { bindEquipePag } from "../components/equipePag.js";
 import { addrFields, itemsFields, checks, options, fillForm, bindForm, onResize, clientPickerHTML, bindClientLink, matchClient, clientLabel, applyClient, agendamentoCard, defaultResources } from "../components/formKit.js";
 import { sheetOS, paintPreview } from "../components/sheets.js";
 import { exportPDF, exportPNG, downloadBlob } from "../components/exporter.js";
@@ -159,7 +160,7 @@ async function list(view) {
 
 /* ============================ EDITOR ============================ */
 async function editor(view, q) {
-  const [orders, orcs, clients, cfg0, fleet, teams] = await Promise.all([listAll("orders"), listAll("orcamentos"), listAll("clients"), getCfg(), getFleet(), getTeams()]);
+  const [orders, orcs, clients, cfg0, fleet, teams, staff, teamsFull] = await Promise.all([listAll("orders"), listAll("orcamentos"), listAll("clients"), getCfg(), getFleet(), getTeams(), listAll("staff"), listAll("teams")]); // getTeams() devolve só o nome da equipe; os integrantes vêm de listAll("teams")
   const cfg = { ...cfg0, veiculos: fleet, equipes: teams }; // veículos agora vêm da Frota
   await loadLib("qr").catch(() => toast("Não foi possível carregar o gerador de QR Code. A folha sai sem os QRs."));
 
@@ -194,7 +195,7 @@ async function editor(view, q) {
           <label class="f"><span>Data</span><input data-k="data" type="date"></label>
           <label class="f"><span>Situação</span><select data-k="status">${options(STATUS_OS)}</select></label></div>
         <div class="row"><label class="f"><span>Hora início</span><input data-k="horaIni" type="time"></label><label class="f"><span>Hora término</span><input data-k="horaFim" type="time"></label></div></div>
-      ${agendamentoCard(cfg, S, "Data e horário ficam no cabeçalho.")}
+      ${agendamentoCard(cfg, S, "Data e horário ficam no cabeçalho.", true)}
       <div class="card"><h2>Cliente</h2>${clientPickerHTML(clients)}
         <div class="row r1"><label class="f"><span>Nome completo</span><input data-k="cliNome" autocomplete="off"></label></div>
         <div class="row"><label class="f"><span>Telefone / WhatsApp</span><input data-k="cliTel" data-mask="tel" inputmode="tel" placeholder="(81) 99999-9999"></label>
@@ -225,6 +226,7 @@ async function editor(view, q) {
   const paint = () => { paintPreview($("#prevHost"), sheetOS(S, cfg)); const T = totals(S); $("#kTot").textContent = brl(T.tot); $("#kRes").textContent = brl(T.res); };
   let raf; const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(paint); };
   fillForm(view, S); bindForm(view, S, schedule); bindClientLink(view, S, { clients, orders, orcs, onChange: schedule });
+  bindEquipePag(view, S, { staff, teams: teamsFull, onChange: schedule }).sync(); // valor que cada funcionário por frete recebe neste serviço
   onResize(paint);
   $$("#tabs button").forEach(b => b.addEventListener("click", () => {
     $$("#tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
@@ -241,6 +243,7 @@ async function editor(view, q) {
   };
   async function save(quiet) {
     if (!S.num) { toast("Informe o número da OS"); return false; }
+    if (!(S.veiculo || "").trim()) { toast("Escolha o veículo em “Agendamento”."); return false; }
     if (orders.some(o => o.num === S.num && o._id !== S._id)) { toast("Já existe uma OS com o número " + pad(S.num) + "."); return false; }
     try {
       if (!(await agendaOk())) return false;

@@ -1,4 +1,5 @@
 // Peças de formulário compartilhadas por Ordens, Orçamentos e Clientes.
+import { equipePagHTML } from "./equipePag.js";
 import { esc, MASK, money, digits } from "../../js/utils.js";
 import { ITEM_SUG, clientAddresses, addrText } from "../../js/domain.js";
 
@@ -111,18 +112,17 @@ export function matchClient(S, clients) {
 /* ---------- agendamento: veículo (placa) e equipe ---------- */
 export const veicLabel = v => v.placa + (v.nome ? " — " + v.nome : "");
 /** Opções do seletor: "não definido", os cadastrados e, se for o caso, o valor atual que não está mais na lista. */
-export function resourceOptions(list, field, current, labelFn) {
+export function resourceOptions(list, field, current, labelFn, vazio = "Não definido") {
   const items = (list || []).filter(x => x[field]), vals = items.map(x => x[field]);
-  return '<option value="">Não definido</option>' + items.map(x => `<option value="${esc(x[field])}">${esc(labelFn(x))}</option>`).join("") +
+  return `<option value="">${vazio}</option>` + items.map(x => `<option value="${esc(x[field])}">${esc(labelFn(x))}</option>`).join("") +
     (current && !vals.includes(current) ? `<option value="${esc(current)}">${esc(current)} (não cadastrado)</option>` : "");
 }
-export function agendamentoCard(cfg, cur, note) {
+export function agendamentoCard(cfg, cur, note, withPag = false) { // withPag: mostra o pagamento por funcionário (na OS; no orçamento ele fica na calculadora)
   const sem = !(cfg.veiculos || []).length && !(cfg.equipes || []).length;
   return `<div class="card"><h2>Agendamento</h2><div class="row">
-    <label class="f"><span>Veículo (placa)</span><select data-k="veiculo">${resourceOptions(cfg.veiculos, "placa", cur.veiculo, veicLabel)}</select></label>
+    <label class="f"><span>Veículo (placa) · obrigatório</span><select data-k="veiculo">${resourceOptions(cfg.veiculos, "placa", cur.veiculo, veicLabel, "Escolha o veículo")}</select></label>
     <label class="f"><span>Equipe</span><select data-k="equipe">${resourceOptions(cfg.equipes, "nome", cur.equipe, e => e.nome)}</select></label></div>
-    <div class="row" style="margin-top:10px"><label class="f"><span>Pagamento por funcionário neste frete (R$)</span><input data-k="pagFunc" data-money inputmode="decimal" placeholder="0,00" autocomplete="off"></label><span></span></div>
-    <p class="note" style="margin:-4px 0 10px">Uso interno (não aparece para o cliente). É o valor que cada funcionário pago <b>por frete</b> da equipe recebe neste serviço. Em branco, vale o valor padrão da ficha do funcionário.</p>
+    ${withPag ? `<div style="margin:10px 0">${equipePagHTML()}<p class="note" style="margin-top:4px">Uso interno: não aparece para o cliente.</p></div>` : ""}
     <p class="note">${note} O sistema avisa se já houver outro serviço no mesmo horário com o mesmo veículo ou a mesma equipe.${sem ? ' Cadastre os veículos em <a href="#/frota" style="color:var(--red);font-weight:700">Frota</a> e as equipes em <a href="#/configuracoes?aba=agenda" style="color:var(--red);font-weight:700">Configurações → Equipes e agenda</a>.' : ""}</p></div>`;
 }
 /** Registro novo já nasce com o primeiro veículo e a primeira equipe cadastrados. */

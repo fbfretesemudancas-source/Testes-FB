@@ -17,13 +17,13 @@ const blankItens = () => Array.from({ length: 10 }, () => ({ q: "", d: "", p: fa
 export function blankOS(n) {
   return { num: n, data: today(), status: "aberta", clientId: "", orcamentoId: "", horaIni: "", horaFim: "",
     cliNome: "", cliTel: "", cliCpf: "", cliEmail: "", col: blankAddr(), ent: blankAddr(), itens: blankItens(),
-    veiculo: "", equipe: "", pagFunc: "", tipo: {}, tipoOutro: "", info: {}, andar: "", infoOutros: "", frete: "", desconto: "", pago: "", pgto: {}, // pagFunc: quanto cada funcionário pago por frete recebe neste serviço (uso interno)
+    veiculo: "", equipe: "", pagEq: [], tipo: {}, tipoOutro: "", info: {}, andar: "", infoOutros: "", frete: "", desconto: "", pago: "", pgto: {}, // pagEq: [{ id, nome, funcao, valor }] quanto cada funcionário pago por frete recebe neste serviço (uso interno)
     pixValor: false, obs: "", dataCli: "", dataResp: "" };
 }
 export function blankOrc(n) {
   return { num: n, data: today(), validade: today(7), status: "rascunho", clientId: "", osId: "",
     cliNome: "", cliTel: "", cliEmail: "", col: blankAddr(), ent: blankAddr(), saida: blankAddr(), saidaFim: "", // saida: só se o veículo NÃO sair da partida padrão · saidaFim: "" = volta ao mesmo endereço · "base" = termina na partida padrão
-    veiculo: "", equipe: "", pagFunc: "", servicos: Array.from({ length: 6 }, () => ({ d: "", v: "" })), condPgto: "",
+    veiculo: "", equipe: "", pagEq: [], servicos: Array.from({ length: 6 }, () => ({ d: "", v: "" })), condPgto: "",
     calc: { km: "", horas: "", ajudantes: "", extras: "" }, rota: null,
     tipo: {}, tipoOutro: "", frete: "", desconto: "", obs: "" };
 }
@@ -68,7 +68,7 @@ export function orcToOS(orc, n) {
   let obs = orc.obs || "";
   if (linhas.length) obs += (obs ? "\n" : "") + "Orçamento " + padO(orc.num) + ": " + linhas.map(x => x.d + (num(x.v) ? " (R$ " + x.v + ")" : "")).join("; ");
   if (orc.condPgto) obs += (obs ? "\n" : "") + "Pagamento combinado: " + orc.condPgto;
-  Object.assign(s, { veiculo: orc.veiculo || "", equipe: orc.equipe || "", pagFunc: orc.pagFunc || "", clientId: orc.clientId || "", orcamentoId: orc._id || "", cliNome: orc.cliNome, cliTel: orc.cliTel, cliEmail: orc.cliEmail || "",
+  Object.assign(s, { veiculo: orc.veiculo || "", equipe: orc.equipe || "", pagEq: (orc.pagEq || []).map(x => ({ ...x })), clientId: orc.clientId || "", orcamentoId: orc._id || "", cliNome: orc.cliNome, cliTel: orc.cliTel, cliEmail: orc.cliEmail || "",
     col: { ...blankAddr(), ...orc.col }, ent: { ...blankAddr(), ...orc.ent }, tipo: { ...(orc.tipo || {}) }, tipoOutro: orc.tipoOutro || "",
     frete: orc.frete || (orcSub(orc) ? money(orcSub(orc)) : ""), desconto: orc.desconto || "", obs });
   if (/^\d{4}-\d{2}-\d{2}T/.test(dh)) { s.data = dh.slice(0, 10); s.horaIni = dh.slice(11, 16); }
@@ -117,27 +117,34 @@ export const waTextOrc = (o, cfg = {}) => renderTpl((cfg.msgs && cfg.msgs.orcame
 /** kind: "os" (resumo), "confirmacao", "cobranca" ou "conclusao". */
 export const waTextOS = (s, cfg = {}, kind = "os") => renderTpl((cfg.msgs && cfg.msgs[kind]) || DEFAULT_MSG[kind], varsOS(s, cfg));
 
-/* ---------- Cálculo do preço sugerido (valores vêm de Configurações) ---------- */
-export const DEFAULT_PRECO = { consumo: "10", combustivel: "6,20", manutencaoKm: "0,50", horaMotorista: "40,00", horaAjudante: "25,00",
-  ajudantes: "1", horasServico: "2", pctDeslocamento: "100", custoFixo: "0,00", margem: "30", minimo: "150,00", arredondar: "5" };
+/* ---------- Cálculo do preço sugerido ----------
+   Vem do veículo (ficha em Frota): consumo e manutenção por km.  Vem das Configurações: preço do combustível, margem e arredondamento.
+   Vem da equipe do serviço: mão de obra, o valor fixo por frete de cada funcionário (ficha, ajustável no orçamento). */
+export const DEFAULT_PRECO = { combustivel: "6,20", margem: "30", arredondar: "5" };
 /**
- * Custo = combustível + manutenção + mão de obra (serviço + viagem) + custo fixo + extras.
- * Preço = custo × (1 + margem), arredondado e respeitando o mínimo. Devolve também as linhas prontas para o orçamento.
+ * Custo = combustível (km ÷ consumo × preço do litro) + manutenção (km × R$/km) + mão de obra + extras (pedágio, taxas).
+ * Mão de obra = valor por frete de cada funcionário da equipe (i.equipe = [{ funcao, valor }]).
+ * Cada linha de serviço = custo da linha × (1 + margem), arredondado para cima ao múltiplo configurado:
+ *   · "Frete e transporte": combustível + manutenção + funcionários com função Motorista;
+ *   · "Ajudante(s)": as demais funções;
+ *   · "Pedágio / taxas": os extras, repassados sem margem.
+ * Preço = soma das linhas. Não há valor mínimo: fretes baratos saem pelo valor calculado.
  */
 export function calcPreco(p, i) {
-  const n = k => num(p[k]), km = Math.max(0, num(i.km)), hServ = Math.max(0, num(i.horas)), aj = Math.max(0, Math.floor(num(i.ajudantes))), extras = Math.max(0, num(i.extras));
-  const hViagem = Math.max(0, num(i.minViagem)) / 60 * Math.min(100, Math.max(0, n("pctDeslocamento"))) / 100, horas = hServ + hViagem;
+  const n = k => num(p[k]), km = Math.max(0, num(i.km)), extras = Math.max(0, num(i.extras));
+  const equipe = (i.equipe || []).map(x => ({ funcao: String(x.funcao || ""), valor: Math.max(0, num(x.valor)) })), ehMot = x => /motorista/i.test(x.funcao);
+  const soma = l => l.reduce((t, x) => t + x.valor, 0), apoio = equipe.filter(x => !ehMot(x) && x.valor > 0);
   const combustivel = n("consumo") > 0 ? km / n("consumo") * n("combustivel") : 0, manutencao = km * n("manutencaoKm");
-  const motorista = horas * n("horaMotorista"), ajudantes = horas * aj * n("horaAjudante"), fixo = n("custoFixo");
-  const custo = combustivel + manutencao + motorista + ajudantes + fixo + extras;
+  const motorista = soma(equipe.filter(ehMot)), ajudantes = soma(apoio), aj = apoio.length;
+  const custo = combustivel + manutencao + motorista + ajudantes + extras;
   const m = 1 + n("margem") / 100, step = Math.max(1, n("arredondar") || 1), up = v => Math.ceil(v / step - 1e-9) * step;
-  const lines = [{ d: "Frete e transporte", v: up((combustivel + manutencao + motorista + fixo) * m) }];
-  if (ajudantes > 0) lines.push({ d: "Ajudante" + (aj > 1 ? "s (" + aj + ")" : ""), v: up(ajudantes * m) });
-  if (extras > 0) lines.push({ d: "Pedágio / taxas", v: extras });
-  let preco = lines.reduce((s, l) => s + l.v, 0), abaixoMin = false;
-  if (preco < n("minimo")) { lines[0].v += up(n("minimo") - preco); preco = lines.reduce((s, l) => s + l.v, 0); abaixoMin = true; }
-  return { km, hServ, hViagem, horas, aj, combustivel, manutencao, motorista, ajudantes, fixo, extras, custo, preco, lucro: preco - custo,
-    margemReal: custo > 0 ? (preco - custo) / custo * 100 : 0, abaixoMin, lines: lines.map(l => ({ d: l.d, v: money(l.v) })) };
+  const linhas = [], add = (d, c, semMargem) => { const cm = semMargem ? c : c * m; linhas.push({ d, custo: c, comMargem: cm, v: semMargem ? c : up(cm), semMargem: !!semMargem }); };
+  if (combustivel + manutencao + motorista > 0) add("Frete e transporte", combustivel + manutencao + motorista);
+  if (ajudantes > 0) add("Ajudante" + (aj > 1 ? "s (" + aj + ")" : ""), ajudantes);
+  if (extras > 0) add("Pedágio / taxas", extras, true);
+  const preco = linhas.reduce((t, l) => t + l.v, 0);
+  return { km, combustivel, manutencao, motorista, ajudantes, aj, extras, custo, preco, lucro: preco - custo,
+    margemReal: custo > 0 ? (preco - custo) / custo * 100 : 0, linhas, lines: linhas.map(l => ({ d: l.d, v: money(l.v) })) };
 }
 
 /** Completa um registro salvo (inclusive OS antigas) com todos os campos do modelo. */
@@ -145,13 +152,13 @@ export function normOS(rec) {
   const b = blankOS(rec.num), s = { ...b, ...rec };
   s.col = { ...blankAddr(), ...rec.col }; s.ent = { ...blankAddr(), ...rec.ent };
   s.itens = b.itens.map((x, i) => ({ ...x, ...((rec.itens || [])[i] || {}) }));
-  s.tipo = { ...rec.tipo }; s.info = { ...rec.info }; s.pgto = { ...rec.pgto };
+  s.tipo = { ...rec.tipo }; s.info = { ...rec.info }; s.pgto = { ...rec.pgto }; s.pagEq = (rec.pagEq || []).map(x => ({ ...x }));
   s.status = osStatus(rec);
   return s;
 }
 export function normOrc(rec) {
   const b = blankOrc(rec.num), s = { ...b, ...rec };
-  s.col = { ...blankAddr(), ...rec.col }; s.ent = { ...blankAddr(), ...rec.ent }; s.saida = { ...blankAddr(), ...rec.saida }; s.tipo = { ...rec.tipo };
+  s.col = { ...blankAddr(), ...rec.col }; s.ent = { ...blankAddr(), ...rec.ent }; s.saida = { ...blankAddr(), ...rec.saida }; s.pagEq = (rec.pagEq || []).map(x => ({ ...x })); s.tipo = { ...rec.tipo };
   s.servicos = b.servicos.map((x, i) => ({ ...x, ...((rec.servicos || [])[i] || {}) }));
   s.calc = { ...b.calc, ...(rec.calc || {}) };
   // orçamento criado antes das linhas de serviço: o frete vira a primeira linha

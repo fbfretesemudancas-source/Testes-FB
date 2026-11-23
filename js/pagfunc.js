@@ -33,13 +33,13 @@ export function pendencias(staff, teams, orders, pagos, hoje = today()) {
           st: venc < hoje ? "atrasado" : venc === hoje ? "hoje" : venc <= breve ? "breve" : "futuro" });
       }
     } else if (s.pagTipo === "frete") {
-      const padrao = num(s.valorFrete); // valor padrão da ficha; a OS (herdado do orçamento) pode definir outro em "pagFunc"
+      const padrao = num(s.valorFrete); // valor padrão da ficha; a OS (herdada do orçamento) pode definir outro para ele em "pagEq"
       const eqs = new Set((teams || []).filter(t => (t.membros || []).includes(s._id)).map(t => norm(t.nome)));
       for (const o of orders || []) {
         if (!o.equipe || !eqs.has(norm(o.equipe)) || osStatus(o) !== "concluida" || (o.data || "") < desde) continue;
         const chave = "f:" + s._id + ":" + o._id;
         if (feitos.has(chave)) continue;
-        const daOS = num(o.pagFunc), v = daOS > 0 ? daOS : padrao; // sem nenhum dos dois: aparece com valor em branco para você informar
+        const linha = (o.pagEq || []).find(r => r.id === s._id), daOS = linha ? num(linha.valor) : 0, v = daOS > 0 ? daOS : padrao; // sem nenhum dos dois: aparece com valor em branco para você informar
         out.push({ chave, tipo: "frete", staffId: s._id, nome: s.nome, osId: o._id, osNum: o.num, venc: o.data, valor: v, st: "pagar", origem: daOS > 0 ? "os" : v > 0 ? "ficha" : "", semValor: v <= 0,
           titulo: "Frete OS " + String(o.num).padStart(4, "0") + " · " + (o.cliNome || "Sem nome") });
       }

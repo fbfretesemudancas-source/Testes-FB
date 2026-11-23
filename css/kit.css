@@ -115,3 +115,16 @@ a.btn{color:var(--fg)}
 .dirty{display:inline-flex;align-items:center;gap:6px}
 .agbar .btn.sm{min-height:34px}
 .shortcuts a.btn{gap:8px}
+
+/* pagamento por funcionário no orçamento/OS */
+.eqpag-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:6px}
+.eqpag small.lb-lbl{display:block;margin-bottom:2px}
+
+/* tabela da calculadora do frete: custos → linhas de serviço */
+.calc-h{margin:14px 0 6px;font:700 13px var(--f-disp);letter-spacing:.06em;color:var(--mut);text-transform:uppercase}
+.calc-scroll{overflow-x:auto;margin:2px 0}
+.calc-lines{width:100%;border-collapse:collapse;font-size:14px}
+.calc-lines th{font-size:12px;color:var(--mut);font-weight:700;text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.calc-lines td{padding:8px;text-align:right;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+.calc-lines th:first-child,.calc-lines td:first-child{text-align:left;white-space:normal}
+.calc-lines td:last-child{color:var(--red)}

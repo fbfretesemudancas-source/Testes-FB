@@ -15,12 +15,8 @@ const EMPRESA = [["empresa", "Nome da empresa (usado nas mensagens)"], ["tel", "
 const BASE = [["base.rua", "Rua / Avenida"], ["base.num", "Nº"], ["base.bairro", "Bairro"], ["base.cidade", "Cidade"]];
 const BASE_COORD = [["base.coord", "Coordenadas ou link do Google Maps (opcional, deixa o ponto exato)", "", "No Google Maps, clique com o botão direito na sua casa e toque nos números que aparecem para copiar. Se preencher, vale mais que o endereço."]];
 const ROTAS = [["rotas.folga", "Folga sobre a distância calculada (%)", "num", "Cobre desvios e diferenças entre o mapa e o trajeto real. 0 = sem folga"], ["rotas.fator", "Fator de estimativa em linha reta", "num", "Usado só se o serviço de rotas não responder. Ex.: 1,35"], ["rotas.servidor", "Servidor de rotas OSRM (avançado)", "", "Deixe em branco para usar o gratuito"]];
-const PRECO = [["preco.consumo", "Consumo padrão (km por litro)", "num", "Usado só se o veículo não tiver consumo na ficha (Frota)"], ["preco.combustivel", "Preço do combustível (R$ por litro)", "money"],
-  ["preco.manutencaoKm", "Manutenção padrão (R$ por km)", "money", "Usado só se o veículo não tiver na ficha. Pneus, óleo, revisões, peças"], ["preco.horaMotorista", "Valor da sua hora (R$ por hora)", "money", "Seu trabalho como motorista. Use 0 para não contar"],
-  ["preco.horaAjudante", "Valor da hora do ajudante (R$ por hora)", "money"], ["preco.ajudantes", "Ajudantes por serviço (padrão)", "num"],
-  ["preco.horasServico", "Horas de serviço, carga + descarga (padrão)", "num"], ["preco.pctDeslocamento", "% do tempo de viagem que entra no preço", "num", "100 = cobra todo o tempo de estrada"],
-  ["preco.custoFixo", "Custo fixo padrão por serviço (R$)", "money", "Deixe 0,00 se seguro, IPVA e licenciamento são pagos por outra pessoa"], ["preco.margem", "Margem de lucro (%)", "num", "Aplicada sobre o custo"],
-  ["preco.minimo", "Valor mínimo do serviço (R$)", "money"], ["preco.arredondar", "Arredondar valores para múltiplo de (R$)", "num", "Ex.: 5 deixa em 245, 250…"]];
+const PRECO = [["preco.combustivel", "Preço do combustível (R$ por litro)", "money", "Atualize quando o preço mudar. Consumo e manutenção por km vêm da ficha de cada veículo (Frota); a mão de obra, do valor por frete de cada funcionário (Funcionários)"],
+  ["preco.margem", "Margem de lucro (%)", "num", "Aplicada sobre o custo de cada linha de serviço"], ["preco.arredondar", "Arredondar valores para múltiplo de (R$)", "num", "Ex.: 5 deixa em 245, 250…"]];
 const AGENDA = [["agenda.duracao", "Duração padrão de um serviço (horas)", "num", "Usada quando a OS ou o orçamento não tem horário de término. Serve para desenhar a agenda e achar conflitos."]];
 const SAVE_KEYS = [...EMPRESA, ...BASE, ...BASE_COORD, ...ROTAS, ...PRECO, ...AGENDA].map(f => f[0]).concat(["base.lat", "base.lon", "base.label", "base.precisao", "rotas.provedor", "rotas.googleKey"], ["orcamento", "os", "confirmacao", "cobranca", "conclusao"].map(k => "msgs." + k));
 const TPL = [["orcamento", "Mensagem do orçamento", "Enviada junto com a imagem do orçamento."], ["os", "Mensagem do resumo da OS", "Usada no botão “Enviar resumo por WhatsApp” da OS."],
@@ -94,8 +90,8 @@ async function screen(view) {
   const previews = () => TPL.forEach(([k]) => { $("#prev_" + k).textContent = renderTpl(getP(C, "msgs." + k), { ...SAMPLE[k], empresa: C.empresa || "" }); });
   const status = () => { $("#baseStatus").textContent = C.base.lat !== "" && C.base.lat != null ? "Localizado: " + C.base.label + (C.base.precisao ? " — precisão: " + (PRECISAO[C.base.precisao] || C.base.precisao) : "") : "Ainda não localizado. Preencha o endereço e toque em “Localizar no mapa”."; };
   const simul = () => { // mostra na hora o efeito dos custos, com uma viagem de exemplo
-    const r = calcPreco(C.preco, { km: 30, horas: C.preco.horasServico, ajudantes: C.preco.ajudantes, extras: 0, minViagem: 45 });
-    $("#simulTit").textContent = `Exemplo: viagem de 30 km (45 min de estrada), ${num(C.preco.horasServico)} h de serviço e ${Math.floor(num(C.preco.ajudantes))} ajudante(s).`;
+    const r = calcPreco({ ...C.preco, consumo: "10", manutencaoKm: "0,50" }, { km: 30, extras: 0, equipe: [{ funcao: "Motorista", valor: "150,00" }, { funcao: "Ajudante", valor: "80,00" }] });
+    $("#simulTit").textContent = "Exemplo: viagem de 30 km, veículo com 10 km/L e R$ 0,50 por km de manutenção, um motorista (R$ 150,00 por frete) e um ajudante (R$ 80,00 por frete). Na prática, esses valores vêm do veículo e da equipe do serviço.";
     $("#simul").innerHTML = `<div class="brk"><div><span>Custo total</span><b>${brl(r.custo)}</b></div><div class="big"><span>Preço sugerido</span><b>${brl(r.preco)}</b></div><div><span>Lucro estimado</span><b>${brl(r.lucro)} <small>(${Math.round(r.margemReal)}% sobre o custo)</small></b></div></div>`;
   };
   const markDirty = () => { dirty = true; $("#dirty").hidden = false; };
@@ -161,7 +157,6 @@ async function screen(view) {
 
   $$(".js-save").forEach(b => b.addEventListener("click", async () => {
     if (C.rotas.provedor === "google" && !(C.rotas.googleKey || "").trim()) { show("rotas"); toast("Para usar o Google Maps, cole a chave do Google."); return; }
-    if (!(num(C.preco.consumo) > 0)) { show("precos"); toast("O consumo do veículo precisa ser maior que zero."); return; }
     const out = {}; SAVE_KEYS.forEach(k => setDeep(out, k, getP(C, k)));
     try {
       await saveCfg(out); dirty = false; $("#dirty").hidden = true;

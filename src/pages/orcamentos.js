@@ -9,6 +9,7 @@ import { sheetOrc, paintPreview, ORC } from "../components/sheets.js";
 import { exportPDF, exportPNG, renderPNG, downloadBlob } from "../components/exporter.js";
 import { loadLib } from "../../js/lib.js";
 import { distanciaHTML, calculadoraHTML, bindPricing } from "../components/pricing.js";
+import { bindEquipePag } from "../components/equipePag.js";
 import { confirmAgenda } from "../components/agendaGuard.js";
 import { candOS, candOrc } from "../../js/agenda.js";
 import { btn, group, bar, armBtn } from "../components/ui.js";
@@ -134,7 +135,7 @@ const servFields = () => `<datalist id="servSug">${SERV_SUG.map(x => `<option va
   `<div class="items">${[0, 1, 2, 3, 4, 5].map(i => `<div class="it" style="grid-template-columns:minmax(0,1fr) 120px"><input type="text" list="servSug" data-k="servicos.${i}.d" placeholder="Serviço ${i + 1}" aria-label="Serviço ${i + 1}"><input type="text" data-k="servicos.${i}.v" data-money inputmode="decimal" placeholder="0,00" aria-label="Valor do serviço ${i + 1}"></div>`).join("")}</div>`;
 
 async function editor(view, q) {
-  const [orcs, orders, clients, cfg0, fleet, vehicles, teams] = await Promise.all([listAll("orcamentos"), listAll("orders"), listAll("clients"), getCfg(), getFleet(), listAll("vehicles"), getTeams()]);
+  const [orcs, orders, clients, cfg0, fleet, vehicles, teams, staff, teamsFull] = await Promise.all([listAll("orcamentos"), listAll("orders"), listAll("clients"), getCfg(), getFleet(), listAll("vehicles"), getTeams(), listAll("staff"), listAll("teams")]); // getTeams() devolve só o nome da equipe; os integrantes vêm de listAll("teams")
   const cfg = { ...cfg0, veiculos: fleet, equipes: teams }; // veículos agora vêm da Frota
   loadLib("h2c").catch(() => {}); loadLib("pdf").catch(() => {});
   let O; const src = id => orcs.find(o => o._id === id);
@@ -190,6 +191,7 @@ async function editor(view, q) {
   let raf; const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(paint); };
   fillForm(view, O); bindForm(view, O, schedule); bindClientLink(view, O, { clients, orders, orcs, onChange: schedule });
   const pricing = bindPricing(view, O, cfg, { onChange: schedule, fleet: vehicles });
+  bindEquipePag(view, O, { staff, teams: teamsFull, onChange: schedule }).sync(); // pagamento por funcionário da equipe: alimenta o custo de mão de obra
   onResize(paint);
   $$("#tabs button").forEach(b => b.addEventListener("click", () => {
     $$("#tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
@@ -207,6 +209,7 @@ async function editor(view, q) {
   async function save(quiet) {
     syncOrc(O);
     if (!O.num) { toast("Informe o número do orçamento"); return false; }
+    if (!(O.veiculo || "").trim()) { toast("Escolha o veículo em “Agendamento”: o frete é calculado com o consumo e a manutenção dele."); return false; }
     if (orcs.some(o => o.num === O.num && o._id !== O._id)) { toast("Já existe um orçamento com o número " + padO(O.num) + "."); return false; }
     try {
       if (O.status === "aguardando" && !(await agendaOk())) return false; // orçamento enviado segura o horário

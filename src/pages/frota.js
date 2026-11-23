@@ -42,7 +42,7 @@ async function list(view) {
       const d = mine(v), med = consumoMedido(d);
       return `<div class="h"><div class="n" style="font-size:16px">${esc(v.placa)}</div>
         <div class="t"><b>${esc(nome(v))}${v.ano ? " · " + esc(v.ano) : ""}${v.ativo === false ? " (inativo)" : ""}</b>${v.compartilhado ? ' <span class="badge aguardando">Compartilhado</span>' : ""}
-          <small>${v.kmAtual ? kmTxt(v.kmAtual) : "sem hodômetro"} · consumo ${v.consumo ? esc(v.consumo) + " km/L" : "padrão"}${med && !v.compartilhado ? " (medido " + f1(med.kmL) + ")" : ""} · manutenção ${v.manutencaoKm ? "R$ " + esc(v.manutencaoKm) + "/km" : "padrão"}</small></div>
+          <small>${v.kmAtual ? kmTxt(v.kmAtual) : "sem hodômetro"} · consumo ${v.consumo ? esc(v.consumo) + " km/L" : "não informado"}${med && !v.compartilhado ? " (medido " + f1(med.kmL) + ")" : ""} · manutenção ${v.manutencaoKm ? "R$ " + esc(v.manutencaoKm) + "/km" : "padrão"}</small></div>
         <div class="v">${brl(gastoMes(d, mes))}<br><small style="font-weight:500;color:var(--mut)">no mês</small></div>
         <div class="b">${btn({ label: "Abrir ficha", ico: "eye", sm: true, href: "#/frota?id=" + esc(v._id) })}</div></div>`;
     }).join("") || '<div class="card note">Nenhum veículo cadastrado. Toque em “Novo veículo”.</div>'}</div>`;
@@ -80,10 +80,9 @@ async function ficha(view, q) {
       <p class="note" style="margin:4px 0 0">Liga o registro do km ao retirar e ao devolver (no checklist da OS e na aba Usos da empresa) e o rateio dos gastos de manutenção e documentos no Painel.</p></div>
       <div class="card"><h2>Custos usados no preço dos fretes</h2>
         <p class="note" style="margin-bottom:10px">O orçamento usa estes valores quando este veículo é escolhido. Em branco, vale o padrão das Configurações.</p>
-        <div class="row"><label class="f"><span>Consumo (km por litro)</span><input data-k="consumo" inputmode="decimal" placeholder="padrão: ${esc(cfg.preco.consumo)}"></label>
-          <label class="f"><span>Manutenção (R$ por km)</span><input data-k="manutencaoKm" data-money inputmode="decimal" placeholder="padrão: ${esc(cfg.preco.manutencaoKm)}"></label></div>
-        <div class="row"><label class="f"><span>Custo fixo por serviço (R$)</span><input data-k="custoFixo" data-money inputmode="decimal" placeholder="0,00"></label><span></span></div>
-        <p class="note">Custo fixo: coloque 0,00 se seguro, IPVA e licenciamento são pagos por outra pessoa (não entram no custo do frete).</p><div id="refs"></div></div>
+        <div class="row"><label class="f"><span>Consumo (km por litro) · obrigatório</span><input data-k="consumo" inputmode="decimal" placeholder="ex.: 10"></label>
+          <label class="f"><span>Manutenção (R$ por km) · obrigatório</span><input data-k="manutencaoKm" data-money inputmode="decimal" placeholder="ex.: 0,50"></label></div>
+        <p class="note">Consumo e manutenção por km entram no cálculo do frete dos orçamentos (pneus, óleo, revisões e peças contam na manutenção). Use 0,00 na manutenção se não quiser cobrar.</p><div id="refs"></div></div>
       <div class="card"><h2>Observações</h2><div class="row r1"><label class="f"><span>Anotações sobre o veículo</span><textarea data-k="obs" rows="3"></textarea></label></div></div></div>`) +
     panel("km", need("pKm")) + panel("usos", need("pUsos")) + panel("combustivel", need("pFuel")) + panel("manutencao", need("pManut")) + panel("documentos", need("pDocs")) + panel("despesas", need("pDesp"));
 
@@ -100,7 +99,7 @@ async function ficha(view, q) {
     if (!saved) return;
     const sh = !!V.compartilhado, med = sh ? null : consumoMedido(own()), cpk = sh ? null : custoPorKm(own()), R = resumoUsos(usos), ce = custoEmpresa(R.km, precoV());
     $("#sum").innerHTML = `<div class="kpis"><div class="kpi big"><small>Quilometragem</small><b>${V.kmAtual ? kmTxt(V.kmAtual) : "—"}</b></div>
-      <div class="kpi"><small>Consumo usado no preço</small><b>${esc(V.consumo || cfg.preco.consumo)} km/L</b><em>${V.consumo ? "da ficha" : "padrão"}${med ? " · medido " + f1(med.kmL) : ""}</em></div>
+      <div class="kpi"><small>Consumo usado no preço</small><b>${V.consumo ? esc(V.consumo) + " km/L" : "—"}</b><em>${V.consumo ? "da ficha" : "preencha na ficha"}${med ? " · medido " + f1(med.kmL) : ""}</em></div>
       <div class="kpi"><small>Gasto no mês</small><b>${brl(gastoMes(own(), mes))}</b></div>
       ${sh ? `<div class="kpi"><small>Custo por km da empresa</small><b>${ce.porKm != null ? brl(ce.porKm) : "—"}</b><em>consumo e manutenção da ficha</em></div>
         <div class="kpi"><small>Uso da empresa</small><b>${R.parcela != null ? Math.round(R.parcela * 100) + "%" : "—"}</b><em>${R.parcela != null ? kmTxt(R.km) + " de " + kmTxt(R.total) : "precisa de 2 usos completos"}</em></div>`
@@ -254,6 +253,8 @@ async function ficha(view, q) {
   async function saveVehicle() {
     if (!(V.placa || "").trim()) { show("dados"); toast("Informe a placa do veículo."); return false; }
     if (vehicles.some(x => x._id !== V._id && x.placa === V.placa.trim())) { show("dados"); toast("Já existe um veículo com esta placa."); return false; }
+    if (!(num(V.consumo) > 0)) { show("dados"); toast("Informe o consumo do veículo (km por litro): ele entra no cálculo do frete."); return false; }
+    if (!String(V.manutencaoKm == null ? "" : V.manutencaoKm).trim()) { show("dados"); toast("Informe a manutenção do veículo (R$ por km, pode ser 0,00): ela entra no cálculo do frete."); return false; }
     const bad = V.docs.find(d => (d.link || "").trim() && !isUrl(d.link)); if (bad) { show("documentos"); toast("Link inválido: " + bad.link); return false; }
     const rec = { ...V, placa: V.placa.trim(), docs: V.docs.filter(d => (d.descricao || "").trim() || d.vencimento || num(d.valor) || (d.link || "").trim()).map(d => ({ ...d, link: (d.link || "").trim() })) };
     try {
