@@ -6,7 +6,7 @@ import { overall } from "../components/ckProgress.js";
 import { esc, brl, pad, fmtD, toast, today, slug, waLink, num, numCurto, nomeArquivo } from "../../js/utils.js";
 import { listAll, saveItem, removeItem, getCfg, nextNum, getFleet, getTeams } from "../firebase/db.js";
 import { ordersToCsv } from "../../js/export.js";
-import { STATUS_OS, TIPOS, INFOS, PGTOS, label, blankOS, normOS, totals, osStatus, waTextOS, blankClient, ofClient } from "../../js/domain.js";
+import { STATUS_OS, STATUS_OS_VIEW, osView, TIPOS, INFOS, PGTOS, label, blankOS, normOS, totals, osStatus, waTextOS, blankClient, ofClient } from "../../js/domain.js";
 import { bindEquipePag } from "../components/equipePag.js";
 import { addrFields, itemsFields, checks, options, fillForm, bindForm, onResize, clientPickerHTML, bindClientLink, matchClient, clientLabel, applyClient, agendamentoCard, defaultResources } from "../components/formKit.js";
 import { sheetOS, paintPreview } from "../components/sheets.js";
@@ -67,11 +67,11 @@ async function list(view) {
     const t = busca.toLowerCase().trim();
     return !t || (numCurto(o.num) + " " + String(o.num) + " " + (o.cliNome || "") + " " + (o.cliTel || "")).toLowerCase().includes(t);
   };
-  const visible = () => orders.filter(passa).filter(o => filtro === "todas" || osStatus(o) === filtro);
+  const visible = () => orders.filter(passa).filter(o => filtro === "todas" || osView(o) === filtro);
 
   const draw = () => {
-    const base = orders.filter(passa), cnt = k => base.filter(o => k === "todas" || osStatus(o) === k).length;
-    $("#chips").innerHTML = [["todas", "Todas"], ...STATUS_OS].map(([k, l]) => `<button class="chip" type="button" data-f="${k}" aria-pressed="${k === filtro}">${l} (${cnt(k)})</button>`).join("");
+    const base = orders.filter(passa), cnt = k => base.filter(o => k === "todas" || osView(o) === k).length;
+    $("#chips").innerHTML = [["todas", "Todas"], ...STATUS_OS_VIEW].map(([k, l]) => `<button class="chip" type="button" data-f="${k}" aria-pressed="${k === filtro}">${l} (${cnt(k)})</button>`).join("");
     const rows = visible(), ativos = rows.filter(o => osStatus(o) !== "cancelada");
     const fat = ativos.reduce((s, o) => s + totals(o).tot, 0), rec = ativos.reduce((s, o) => s + Math.min(num(o.pago), totals(o).tot), 0), pen = ativos.reduce((s, o) => s + totals(o).res, 0);
     $("#totais").innerHTML = `<div class="kpis"><div class="kpi big"><small>Faturado</small><b>${brl(fat)}</b><em>${ativos.length} OS</em></div><div class="kpi"><small>Recebido</small><b>${brl(rec)}</b></div><div class="kpi"><small>A receber</small><b>${brl(pen)}</b></div></div>
@@ -80,14 +80,14 @@ async function list(view) {
       const T = totals(o), st = osStatus(o), id = esc(o._id);
       const ab = (a, ico, label, kind = "", tip = "") => btn({ label, ico, kind, tip, sm: true, attrs: `data-a="${a}" data-id="${id}"` });
       const flow = st === "aberta" ? ab("start", "play", "Iniciar serviço", "pri") : st === "andamento" ? ab("finish", "check", "Finalizar", "pri") : ab("reopen", "undo", "Reabrir");
-      const wa = st === "cancelada" ? [] : [st === "aberta" && ab("wa-confirmacao", "whatsapp", "Confirmar", "wa", "Confirmar agendamento pelo WhatsApp"),
+      const wa = st === "cancelada" ? [] : [st === "aberta" && ab("wa-confirmacao", "whatsapp", o.confirmada ? "Reenviar" : "Confirmar", "wa", o.confirmada ? "Reenviar a confirmação pelo WhatsApp (a OS já está confirmada)" : "Enviar a confirmação pelo WhatsApp e marcar a OS como confirmada"),
         st === "concluida" && ab("wa-conclusao", "whatsapp", "Avisar conclusão", "wa", "Avisar o cliente que o serviço foi concluído"),
         T.res > 0 && ab("wa-cobranca", "whatsapp", "Cobrar", "wa", "Cobrar o valor pendente pelo WhatsApp")];
       const fin = st !== "cancelada" && T.res > 0 ? ab("quitar", "dollar", "Marcar como pago", "ok") : "";
       const manage = btn({ label: "Checklist", ico: "clipboard", sm: true, href: "#/checklist?os=" + id }) + btn({ ico: "eye", tip: "Abrir", sm: true, iconOnly: true, href: "#/ordens?id=" + id }) + btn({ ico: "copy", tip: "Duplicar", sm: true, iconOnly: true, href: "#/ordens?dup=" + id }) +
         btn({ ico: "trash", tip: "Excluir", kind: "danger", sm: true, iconOnly: true, attrs: `data-a="del" data-id="${id}"` });
       return `<div class="h"><div class="n">${numCurto(o.num)}</div>
-        <div class="t"><b>${esc(o.cliNome || "Sem nome")}</b><small>${fmtD(o.data)}${o.cliTel ? " · " + esc(o.cliTel) : ""}${o.veiculo ? " · " + esc(o.veiculo) : ""} · <span class="badge ${st}">${label(STATUS_OS, st)}</span>${T.res > 0 && st !== "cancelada" ? ` · falta ${brl(T.res)}` : ""}${st !== "cancelada" ? ` · Checklist: ${ckBy[o._id] ? overall(ckBy[o._id]) + "%" : "não iniciado"}` : ""}</small></div>
+        <div class="t"><b>${esc(o.cliNome || "Sem nome")}</b><small>${fmtD(o.data)}${o.cliTel ? " · " + esc(o.cliTel) : ""}${o.veiculo ? " · " + esc(o.veiculo) : ""} · <span class="badge ${osView(o)}"${o.confirmada && o.confirmadaEm && st === "aberta" ? ` title="Confirmada em ${fmtD(o.confirmadaEm)}"` : ""}>${label(STATUS_OS_VIEW, osView(o))}</span>${T.res > 0 && st !== "cancelada" ? ` · falta ${brl(T.res)}` : ""}${st !== "cancelada" ? ` · Checklist: ${ckBy[o._id] ? overall(ckBy[o._id]) + "%" : "não iniciado"}` : ""}</small></div>
         <div class="v">${brl(T.tot)}</div>
         <div class="b">${group(flow)}${group(wa)}${group(fin)}${group(manage)}</div></div>`;
     }).join("") || '<div class="card note">Nenhuma OS encontrada com estes filtros. Toque em “Limpar” ou em “Nova OS”.</div>';
@@ -139,7 +139,11 @@ async function list(view) {
       if (a.startsWith("wa-")) { // mensagens prontas: confirmação, cobrança, conclusão
         const kind = a.slice(3);
         if (kind === "cobranca" && !(totals(o).res > 0)) { toast("Esta OS já está quitada."); return; }
-        window.open(waLink(o.cliTel, waTextOS(normOS(o), cfg, kind)), "_blank", "noopener"); return;
+        window.open(waLink(o.cliTel, waTextOS(normOS(o), cfg, kind)), "_blank", "noopener");
+        if (kind === "confirmacao" && osStatus(o) === "aberta" && !o.confirmada) { // enviou a confirmação: a OS passa a "Confirmada"
+          o.confirmada = true; o.confirmadaEm = today(); await saveItem("orders", o); draw(); toast("OS " + numCurto(o.num) + " marcada como confirmada");
+        }
+        return;
       }
       if (a === "quitar") { // marca como pago: o valor pago passa a ser o total e o "falta" some
         const T0 = totals(o); if (!(T0.res > 0)) { toast("Esta OS já está quitada."); return; }
@@ -168,7 +172,7 @@ async function editor(view, q) {
   const src = id => orders.find(o => o._id === id);
   if (q.get("id")) { const r = src(q.get("id")); if (!r) { view.innerHTML = pageHead("Ordens de serviço") + '<div class="banner">OS não encontrada.</div><a class="btn" href="#/ordens">Voltar para a lista</a>'; return; } S = normOS(r); }
   else if (q.get("dup") && src(q.get("dup"))) {
-    S = normOS(src(q.get("dup"))); delete S._id; delete S.savedAt; delete S.concluidaEm;
+    S = normOS(src(q.get("dup"))); delete S._id; delete S.savedAt; delete S.concluidaEm; S.confirmada = false; S.confirmadaEm = "";
     Object.assign(S, { num: nextNum(orders, cfg.startNum), data: today(), pago: "", dataCli: "", dataResp: "", status: "aberta", orcamentoId: "" });
   } else S = blankOS(nextNum(orders, cfg.startNum));
   if (!S._id && q.get("cliente")) { const c = clients.find(x => x._id === q.get("cliente")); if (c) applyClient(S, c); }
@@ -194,7 +198,9 @@ async function editor(view, q) {
         <div class="row r3 keep"><label class="f"><span>Nº da OS</span><input data-k="num" type="number" min="1" inputmode="numeric"></label>
           <label class="f"><span>Data</span><input data-k="data" type="date"></label>
           <label class="f"><span>Situação</span><select data-k="status">${options(STATUS_OS)}</select></label></div>
-        <div class="row"><label class="f"><span>Hora início</span><input data-k="horaIni" type="time"></label><label class="f"><span>Hora término</span><input data-k="horaFim" type="time"></label></div></div>
+        <div class="row"><label class="f"><span>Hora início</span><input data-k="horaIni" type="time"></label><label class="f"><span>Hora término</span><input data-k="horaFim" type="time"></label></div>
+        <label class="chk" style="margin-top:6px"><input type="checkbox" data-k="confirmada"> Agendamento confirmado com o cliente</label>
+        <p class="note" style="margin:-2px 0 4px">O botão “Confirmar” da lista envia a mensagem e marca isto sozinho. Se mudar a data ou o horário depois, a confirmação é removida.</p></div>
       ${agendamentoCard(cfg, S, "Data e horário ficam no cabeçalho.", true)}
       <div class="card"><h2>Cliente</h2>${clientPickerHTML(clients)}
         <div class="row r1"><label class="f"><span>Nome completo</span><input data-k="cliNome" autocomplete="off"></label></div>
@@ -241,6 +247,7 @@ async function editor(view, q) {
     if (sig === okSig) return true;
     const ok = await confirmAgenda(candOS(S)); if (ok) okSig = sig; return ok;
   };
+  let ag0 = { dh: [S.data, S.horaIni].join("|"), conf: !!S.confirmada }; // data/horário e confirmação como a OS foi aberta
   async function save(quiet) {
     if (!S.num) { toast("Informe o número da OS"); return false; }
     if (!(S.veiculo || "").trim()) { toast("Escolha o veículo em “Agendamento”."); return false; }
@@ -253,13 +260,21 @@ async function editor(view, q) {
         clients.push(c); toast("Cliente " + c.nome + " cadastrado automaticamente");
       }
       if (c) { S.clientId = c._id; const p = $("#cliPick"); if (p && !p.value) p.value = clientLabel(c); }
+      const dh = [S.data, S.horaIni].join("|");
+      let perdeu = false;
+      if (ag0.conf && S.confirmada && dh !== ag0.dh) { // mudou a data ou o horário depois de confirmar: a confirmação perde a validade
+        S.confirmada = false; perdeu = true; const cb = $('[data-k="confirmada"]'); if (cb) cb.checked = false;
+      }
+      if (S.confirmada && !S.confirmadaEm) S.confirmadaEm = today();
+      if (!S.confirmada) S.confirmadaEm = "";
       if (S.status === "concluida" && !S.concluidaEm) S.concluidaEm = new Date().toISOString();
       if (S.status !== "concluida") delete S.concluidaEm;
       const saved = await saveItem("orders", S);
       S._id = saved._id; const i = orders.findIndex(o => o._id === S._id);
       if (i >= 0) orders[i] = saved; else orders.push(saved);
       history.replaceState(null, "", "#/ordens?id=" + S._id); // sem recarregar a tela
-      if (!quiet) toast("OS " + numCurto(S.num) + " salva");
+      ag0 = { dh, conf: !!S.confirmada };
+      if (!quiet || perdeu) toast("OS " + numCurto(S.num) + " salva" + (perdeu ? ". Data ou horário mudou: a confirmação foi removida, envie de novo." : ""));
       return true;
     } catch (e) { console.error(e); toast("Não foi possível salvar a OS."); return false; }
   }

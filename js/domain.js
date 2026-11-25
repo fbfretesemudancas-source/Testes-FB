@@ -8,6 +8,9 @@ export const ITEM_SUG = ["Geladeira","Fogão","Máquina de lavar","Sofá","Cama 
 export const SERV_SUG = ["Frete e transporte","Ajudantes","Embalagem","Montagem e desmontagem","Subida por escadas","Seguro da carga","Taxa de deslocamento"];
 export const COND_SUG = ["a combinar","50% de entrada e 50% na entrega","30% de entrada e o restante na entrega","À vista (PIX)","Pagamento na entrega"];
 export const STATUS_OS  = [["aberta","Aberta"],["andamento","Em andamento"],["concluida","Concluída"],["cancelada","Cancelada"]];
+// Situação para MOSTRAR (cards e filtros): "Confirmada" = OS ainda aberta cujo agendamento já foi confirmado com o cliente.
+// É só uma marca na OS (confirmada/confirmadaEm): o status real continua aberta → andamento → concluída.
+export const STATUS_OS_VIEW = [["aberta","Aberta"],["confirmada","Confirmada"],["andamento","Em andamento"],["concluida","Concluída"],["cancelada","Cancelada"]];
 export const STATUS_ORC = [["rascunho","Rascunho"],["aguardando","Aguardando aprovação"],["convertido","Aprovado"],["recusado","Recusado"]];
 export const label = (list, k) => (list.find(x => x[0] === k) || [0, k])[1];
 
@@ -15,7 +18,7 @@ export const blankAddr = () => ({ rua: "", num: "", bairro: "", cidade: "", comp
 const blankItens = () => Array.from({ length: 10 }, () => ({ q: "", d: "", p: false, m: false, g: false }));
 
 export function blankOS(n) {
-  return { num: n, data: today(), status: "aberta", clientId: "", orcamentoId: "", horaIni: "", horaFim: "",
+  return { num: n, data: today(), status: "aberta", confirmada: false, confirmadaEm: "", clientId: "", orcamentoId: "", horaIni: "", horaFim: "",
     cliNome: "", cliTel: "", cliCpf: "", cliEmail: "", col: blankAddr(), ent: blankAddr(), itens: blankItens(),
     veiculo: "", equipe: "", pagEq: [], tipo: {}, tipoOutro: "", info: {}, andar: "", infoOutros: "", frete: "", desconto: "", pago: "", pgto: {}, // pagEq: [{ id, nome, funcao, valor }] quanto cada funcionário pago por frete recebe neste serviço (uso interno)
     pixValor: false, obs: "", dataCli: "", dataResp: "" };
@@ -34,6 +37,7 @@ export function syncOrc(o) { const s = orcSub(o); o.frete = s ? money(s) : ""; r
 export const totals = s => { const t = Math.max(0, num(s.frete) - num(s.desconto)); return { tot: t, res: Math.max(0, t - num(s.pago)) }; };
 /** OS antiga (sem campo status): passada = concluída, futura/hoje = aberta. */
 export const osStatus = o => o.status || (o.data && o.data < today() ? "concluida" : "aberta");
+export const osView = o => (osStatus(o) === "aberta" && o.confirmada ? "confirmada" : osStatus(o));
 
 /** Ordens/orçamentos de um cliente: por clientId, ou pelo mesmo telefone (pega as OS antigas). */
 export function ofClient(c, list) {

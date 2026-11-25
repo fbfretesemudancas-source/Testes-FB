@@ -39,6 +39,7 @@
 .h .b{flex:0 1 auto;display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
 .badge{display:inline-block;padding:1px 9px;border-radius:999px;font:700 11px/1.5 var(--f-disp);letter-spacing:.07em;text-transform:uppercase;border:1px solid var(--line);background:var(--field);color:var(--mut);vertical-align:middle}
 .badge.andamento,.badge.aguardando{color:#b45309;border-color:#d97706;background:color-mix(in srgb,#d97706 14%,transparent)}
+.badge.confirmada{color:color-mix(in srgb,#2563eb 72%,var(--fg));border-color:#2563eb;background:color-mix(in srgb,#2563eb 13%,transparent)}
 .badge.concluida,.badge.convertido{color:var(--ok);border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
 .badge.cancelada,.badge.recusado,.badge.vencido{color:var(--red);border-color:var(--red);background:var(--red-soft)}
 
