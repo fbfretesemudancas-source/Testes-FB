@@ -10,6 +10,7 @@ import { exportPDF, exportPNG, renderPNG, downloadBlob } from "../components/exp
 import { loadLib } from "../../js/lib.js";
 import { distanciaHTML, calculadoraHTML, bindPricing } from "../components/pricing.js";
 import { bindEquipePag } from "../components/equipePag.js";
+import { bindCepAuto } from "../components/cepAuto.js";
 import { confirmAgenda } from "../components/agendaGuard.js";
 import { candOS, candOrc } from "../../js/agenda.js";
 import { btn, group, bar, armBtn } from "../components/ui.js";
@@ -167,8 +168,8 @@ async function editor(view, q) {
         <div class="row r1"><label class="f"><span>Nome completo</span><input data-k="cliNome" autocomplete="off"></label></div>
         <div class="row"><label class="f"><span>Telefone / WhatsApp</span><input data-k="cliTel" data-mask="tel" inputmode="tel" placeholder="(81) 99999-9999"></label>
           <label class="f"><span>E-mail (opcional)</span><input data-k="cliEmail" type="email"></label></div></div>
-      <div class="card"><h2>Local de carga</h2>${addrFields("col", false)}</div>
-      <div class="card"><h2>Local de descarga</h2>${addrFields("ent", false)}${btn({ label: "Descarga no mesmo endereço da carga", ico: "copy", sm: true, cls: "js-copy" })}</div>
+      <div class="card"><h2>Local de carga</h2>${addrFields("col")}</div>
+      <div class="card"><h2>Local de descarga</h2>${addrFields("ent")}${btn({ label: "Descarga no mesmo endereço da carga", ico: "copy", sm: true, cls: "js-copy" })}</div>
       ${distanciaHTML()}
       <div class="card"><h2>Serviços e valores</h2>
         <p class="note" style="margin-bottom:10px">Liste os serviços do orçamento com o valor de cada um. Para o frete, use a calculadora logo abaixo das linhas.</p>${servFields()}
@@ -191,6 +192,7 @@ async function editor(view, q) {
   let raf; const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(paint); };
   fillForm(view, O); bindForm(view, O, schedule); bindClientLink(view, O, { clients, orders, orcs, onChange: schedule });
   const pricing = bindPricing(view, O, cfg, { onChange: schedule, fleet: vehicles });
+  bindCepAuto(view, O, { cfg, onChange: schedule }); // CEP preenchido sozinho depois de digitar o endereço
   bindEquipePag(view, O, { staff, teams: teamsFull, onChange: schedule }).sync(); // pagamento por funcionário da equipe: alimenta o custo de mão de obra
   onResize(paint);
   $$("#tabs button").forEach(b => b.addEventListener("click", () => {

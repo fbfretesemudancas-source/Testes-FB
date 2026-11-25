@@ -116,6 +116,11 @@ a.btn{color:var(--fg)}
 .agbar .btn.sm{min-height:34px}
 .shortcuts a.btn{gap:8px}
 
+/* CEP automático */
+.cep-hint{display:block;margin-top:4px;font-size:12px;font-weight:500;color:var(--mut);min-height:0}
+.cep-hint:empty{display:none}
+.cep-hint.ok{color:var(--ok)}
+.cep-hint.aviso{color:#b45309}
 /* pagamento por funcionário no orçamento/OS */
 .eqpag-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:6px}
 .eqpag small.lb-lbl{display:block;margin-bottom:2px}

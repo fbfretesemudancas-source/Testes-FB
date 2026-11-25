@@ -8,6 +8,7 @@ import { listAll, saveItem, removeItem, getCfg, nextNum, getFleet, getTeams } fr
 import { ordersToCsv } from "../../js/export.js";
 import { STATUS_OS, STATUS_OS_VIEW, osView, TIPOS, INFOS, PGTOS, label, blankOS, normOS, totals, osStatus, waTextOS, blankClient, ofClient } from "../../js/domain.js";
 import { bindEquipePag } from "../components/equipePag.js";
+import { bindCepAuto } from "../components/cepAuto.js";
 import { addrFields, itemsFields, checks, options, fillForm, bindForm, onResize, clientPickerHTML, bindClientLink, matchClient, clientLabel, applyClient, agendamentoCard, defaultResources } from "../components/formKit.js";
 import { sheetOS, paintPreview } from "../components/sheets.js";
 import { exportPDF, exportPNG, downloadBlob } from "../components/exporter.js";
@@ -232,6 +233,7 @@ async function editor(view, q) {
   const paint = () => { paintPreview($("#prevHost"), sheetOS(S, cfg)); const T = totals(S); $("#kTot").textContent = brl(T.tot); $("#kRes").textContent = brl(T.res); };
   let raf; const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(paint); };
   fillForm(view, S); bindForm(view, S, schedule); bindClientLink(view, S, { clients, orders, orcs, onChange: schedule });
+  bindCepAuto(view, S, { cfg, onChange: schedule }); // CEP preenchido sozinho depois de digitar o endereço
   bindEquipePag(view, S, { staff, teams: teamsFull, onChange: schedule }).sync(); // valor que cada funcionário por frete recebe neste serviço
   onResize(paint);
   $$("#tabs button").forEach(b => b.addEventListener("click", () => {
