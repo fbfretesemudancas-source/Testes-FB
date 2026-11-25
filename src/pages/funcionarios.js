@@ -14,7 +14,10 @@ import { searchBarHTML, filterSec, bindListBar } from "../components/listKit.js"
 
 const SIT = [["ativo", "Ativo"], ["ferias", "Férias"], ["afastado", "Afastado"], ["desligado", "Desligado"]];
 const BADGE = { ativo: "concluida", ferias: "aguardando", afastado: "aguardando", desligado: "cancelada" };
-const FUNCOES = ["Motorista", "Ajudante", "Montador", "Auxiliar administrativo"];
+// Cargos sugeridos (pode digitar outro). Quem dirige deve ter "Motorista" no cargo: é assim que o orçamento separa o motorista dos ajudantes.
+const FUNCOES = ["Dono", "Dona", "Dono e motorista", "Dona e motorista", "Sócio", "Sócia", "Gerente", "Supervisor", "Chefe de equipe",
+  "Motorista", "Ajudante", "Montador", "Embalador", "Atendente", "Auxiliar administrativo", "Financeiro", "Comercial / vendas", "Estagiário"];
+const params = () => new URLSearchParams(location.hash.split("?")[1] || "");
 const TABS = [["func", "Funcionários"], ["eq", "Equipes"], ["pag", "Pagamentos"]];
 const blankStaff = () => ({ nome: "", tel: "", funcao: "", contratacao: "", situacao: "ativo", obs: "", pagTipo: "", salario: "", diaPag: "5", valorFrete: "", pagDesde: "" });
 const blankTeam = () => ({ nome: "", responsavelId: "", membros: [], ativo: true, obs: "" });
@@ -55,11 +58,12 @@ const injectCss = () => { if (document.getElementById("schCss")) return; const s
 export async function render(root) {
   const view = document.createElement("div"); root.append(view);
   view.innerHTML = '<p class="note">Carregando…</p>';
-  try { await screen(view); }
+  const q = params();
+  try { await (q.has("id") || q.has("novo") ? fichaStaff(view) : q.has("equipe") || q.has("novaequipe") ? fichaTeam(view) : screen(view, q)); }
   catch (err) { console.error(err); view.innerHTML = pageHead("Funcionários e equipes") + '<div class="banner">Não foi possível carregar os dados. Confira a conexão e as regras do Firestore.</div>'; }
 }
 
-async function screen(view) {
+async function screen(view, q) {
   injectCss();
   const cfg = await getCfg();
   const criadas = await migrateTeams(blankTeam); // equipes que estavam em Configurações viram cadastros
@@ -67,7 +71,7 @@ async function screen(view) {
   const reload = async () => { [staff, teams, orders, orcs, pagos] = await Promise.all([listAll("staff", true), listAll("teams", true), listAll("orders", true), listAll("orcamentos", true), listAll("pagfunc", true)]); staff.sort(byNome); teams.sort(byNome); };
   await reload();
 
-  let tab = "func", busca = "", ed = null, armed = null, schedDay = today(), schedMode = "dia", payDate = today(); const E = {}, openHist = new Set();
+  let tab = TABS.some(t => t[0] === q.get("aba")) ? q.get("aba") : "func", busca = "", schedDay = today(), schedMode = "dia", payDate = today(); const openHist = new Set();
   const sName = id => (staff.find(x => x._id === id) || {}).nome || "(removido)";
   const activeTeams = () => teams.filter(t => t.ativo !== false);
   const teamsOf = sid => teams.filter(t => (t.membros || []).includes(sid));
@@ -77,8 +81,8 @@ async function screen(view) {
   view.innerHTML = pageHead("Funcionários e equipes", "Colaboradores, equipes, serviços atribuídos e histórico") +
     (criadas ? `<div class="banner">Importei ${criadas} equipe(s) que estavam em Configurações. Abra cada equipe para escolher o responsável e os integrantes.</div>` : "") +
     `<div id="kpis"></div><div class="cfgtabs" role="tablist">${TABS.map(([k, l]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${k === tab}">${l}</button>`).join("")}</div>
-    <section data-panel="func">${bar({ left: [btn({ label: "Novo funcionário", ico: "plus", kind: "pri", attrs: 'data-a="s-new"' })] })}${searchBarHTML({ placeholder: "Buscar por nome, função ou telefone" })}<div id="sEdit"></div><div class="hist" id="sList"></div></section>
-    <section data-panel="eq" hidden>${bar({ left: [btn({ label: "Nova equipe", ico: "plus", kind: "pri", attrs: 'data-a="t-new"' })] })}<div id="tEdit"></div><div id="sched"></div><div id="avail"></div><div id="tList"></div></section>
+    <section data-panel="func">${bar({ left: [btn({ label: "Novo funcionário", ico: "plus", kind: "pri", href: "#/funcionarios?novo=1" })] })}${searchBarHTML({ placeholder: "Buscar por nome, função ou telefone" })}<div class="hist" id="sList"></div></section>
+    <section data-panel="eq" hidden>${bar({ left: [btn({ label: "Nova equipe", ico: "plus", kind: "pri", href: "#/funcionarios?novaequipe=1" })] })}<div id="sched"></div><div id="avail"></div><div id="tList"></div></section>
     <section data-panel="pag" hidden>${searchBarHTML({ id: "qPag", placeholder: "Buscar por funcionário ou serviço", filtersHTML: filterSec("Tipo de pagamento", `<div class="chips" id="pagChips">${[["", "Todos"], ["mensal", "Salário mensal"], ["frete", "Por frete"]].map(([k, l]) => `<button class="chip" type="button" data-pt="${k}" aria-pressed="${k === ""}">${l}</button>`).join("")}</div>`) })}<div id="pagBox"></div></section>`;
   const $ = s => view.querySelector(s), $$ = s => [...view.querySelectorAll(s)];
 
@@ -97,41 +101,13 @@ async function screen(view) {
       const eq = teamsOf(s._id).map(x => x.nome);
       return `<div class="h"><div class="n" style="font-size:16px">${esc(initials(s.nome))}</div>
         <div class="t"><b>${esc(s.nome)}</b><small>${[s.funcao && esc(s.funcao), s.tel && esc(s.tel), s.contratacao && "contratado em " + fmtD(s.contratacao)].filter(Boolean).join(" · ")}${s.funcao || s.tel || s.contratacao ? " · " : ""}${badge(s)}${eq.length ? " · Equipe: " + esc(eq.join(", ")) : ""}${pagTxt(s)}</small></div>
-        <div class="v"></div><div class="b">${btn({ label: "Editar", ico: "pen", sm: true, attrs: 'data-a="s-edit" data-id="' + esc(s._id) + '"' })}</div></div>`;
+        <div class="v"></div><div class="b">${btn({ label: "Editar", ico: "pen", sm: true, href: "#/funcionarios?id=" + esc(s._id) })}</div></div>`;
     }).join("") || `<div class="card note">${staff.length ? "Nenhum funcionário encontrado." : "Nenhum funcionário cadastrado. Toque em “+ Novo funcionário”."}</div>`;
-  };
-  const drawSEdit = () => {
-    if (!ed || ed.type !== "staff") { $("#sEdit").innerHTML = ""; return; }
-    $("#sEdit").innerHTML = `<div class="card"><h2>${ed.id ? "Editar funcionário" : "Novo funcionário"}</h2>
-      <div class="row"><label class="f"><span>Nome</span><input data-k="nome" autocomplete="off"></label><label class="f"><span>Telefone</span><input data-k="tel" data-mask="tel" inputmode="tel" placeholder="(81) 90000-0000"></label></div>
-      <div class="row"><label class="f"><span>Função</span><input data-k="funcao" list="dlFuncao" placeholder="Ex.: Motorista" autocomplete="off"><datalist id="dlFuncao">${FUNCOES.map(f => `<option value="${esc(f)}">`).join("")}</datalist></label>
-        <label class="f"><span>Data de contratação</span><input type="date" data-k="contratacao"></label></div>
-      <div class="row"><label class="f"><span>Situação</span><select data-k="situacao">${options(SIT)}</select></label>
-        <label class="f"><span>Forma de pagamento</span><select data-k="pagTipo">${options(PAG_TIPOS)}</select></label></div>
-      ${E.pagTipo === "mensal" ? `<div class="row"><label class="f"><span>Salário mensal (R$)</span><input data-k="salario" data-money inputmode="decimal" placeholder="0,00"></label><label class="f"><span>Dia do pagamento (1 a 28)</span><input data-k="diaPag" inputmode="numeric" placeholder="5"></label></div>` : ""}
-      ${E.pagTipo === "frete" ? `<div class="row"><label class="f"><span>Valor padrão por frete (R$)</span><input data-k="valorFrete" data-money inputmode="decimal" placeholder="0,00"></label><span></span></div><p class="note" style="margin:-4px 0 10px">É o valor combinado por frete. Ele entra no <b>custo do orçamento</b> (a função “Motorista” vai no frete; as demais, como “Ajudante”, na linha de ajudantes) sempre que ele estiver na equipe do serviço, e é o que aparece para pagar quando o frete termina. Você pode mudar o valor em cada orçamento ou OS. Se ele não fizer frete com valor combinado, deixe em branco.</p>` : ""}
-      ${E.pagTipo ? `<div class="row"><label class="f"><span>Começa a valer em</span><input type="date" data-k="pagDesde"></label><span></span></div><p class="note" style="margin:-4px 0 10px">Só entram na conta os pagamentos a partir desta data. Para cobrar serviços ou meses que já passaram, coloque uma data anterior.</p>` : ""}
-      <div class="row r1"><label class="f"><span>Observações</span><textarea data-k="obs" rows="3"></textarea></label></div>
-      ${bar({ left: [group(btn({ label: "Salvar", ico: "save", kind: "pri", attrs: 'data-a="s-save"' }), btn({ label: "Cancelar", ico: "x", attrs: 'data-a="cancel"' }))], right: [ed.id && btn({ label: "Excluir", ico: "trash", kind: "danger", attrs: 'data-a="s-del"' })].filter(Boolean) })}</div>`;
-    fillForm($("#sEdit"), E);
   };
   const drawAvail = () => {
     const f = free();
     $("#avail").innerHTML = `<div class="card"><h2>Funcionários disponíveis</h2>${f.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${f.map(s => `<span class="badge">${esc(s.nome)}${s.funcao ? " · " + esc(s.funcao) : ""}</span>`).join("")}</div><p class="note" style="margin-top:8px">Ativos que ainda não estão em nenhuma equipe.</p>`
       : `<p class="note">${staff.length ? "Todos os funcionários ativos já estão em alguma equipe." : "Cadastre funcionários na aba Funcionários para montar as equipes."}</p>`}</div>`;
-  };
-  const drawTEdit = () => {
-    if (!ed || ed.type !== "team") { $("#tEdit").innerHTML = ""; return; }
-    const cand = staff.filter(s => sit(s) === "ativo" || (E.membros || []).includes(s._id));
-    $("#tEdit").innerHTML = `<div class="card"><h2>${ed.id ? "Editar equipe" : "Nova equipe"}</h2>
-      <div class="row"><label class="f"><span>Nome da equipe</span><input data-k="nome" placeholder="Ex.: Equipe 1" autocomplete="off"></label>
-        <label class="f"><span>Responsável</span><select data-k="responsavelId"><option value="">Sem responsável</option>${cand.map(s => `<option value="${esc(s._id)}">${esc(s.nome)}</option>`).join("")}</select></label></div>
-      ${ed.id ? '<p class="note" style="margin:-4px 0 10px">Se mudar o nome, o sistema pergunta se deve atualizar as OS e orçamentos que usam o nome antigo.</p>' : ""}
-      <div class="f"><span>Integrantes</span><div class="used">${cand.map(s => `<div><label class="chk"><input type="checkbox" data-m="${esc(s._id)}" ${(E.membros || []).includes(s._id) ? "checked" : ""}> ${esc(s.nome)} <small>${s.funcao ? "(" + esc(s.funcao) + ")" : ""}${sit(s) !== "ativo" ? " · " + esc(sitLabel(sit(s))) : ""}</small></label></div>`).join("") || "<div><small>Cadastre funcionários primeiro (aba Funcionários).</small></div>"}</div></div>
-      <div class="row r1" style="margin-top:10px"><label class="chk"><input type="checkbox" data-k="ativo"> Equipe ativa (aparece na agenda e nas OS)</label></div>
-      <div class="row r1"><label class="f"><span>Observações</span><textarea data-k="obs" rows="3"></textarea></label></div>
-      ${bar({ left: [group(btn({ label: "Salvar", ico: "save", kind: "pri", attrs: 'data-a="t-save"' }), btn({ label: "Cancelar", ico: "x", attrs: 'data-a="cancel"' }))], right: [ed.id && btn({ label: "Excluir", ico: "trash", kind: "danger", attrs: 'data-a="t-del"' })].filter(Boolean) })}</div>`;
-    fillForm($("#tEdit"), E);
   };
   const osLine = o => `<div><a href="#/ordens?id=${esc(o._id)}" style="color:inherit;text-decoration:none">${esc(fmtD(o.data))} · <b>OS ${pad(o.num)}</b> · ${esc(o.cliNome || "Sem nome")}${o.veiculo ? " · " + esc(o.veiculo) : ""} <span class="badge ${osStatus(o)}">${label(STATUS_OS, osStatus(o))}</span></a></div>`;
   const drawTList = () => {
@@ -144,7 +120,7 @@ async function screen(view) {
         <p style="margin:0 0 4px"><b>Serviços atribuídos:</b> ${open.length ? open.length + " em aberto" : '<span class="note">nenhum em aberto</span>'}</p>
         ${open.length ? `<div class="used">${open.slice(0, 5).map(osLine).join("")}${open.length > 5 ? `<div><small>… e mais ${open.length - 5}</small></div>` : ""}</div>` : ""}
         ${t.obs ? `<p class="note" style="margin-top:8px">${esc(t.obs)}</p>` : ""}
-        <div class="abar" style="margin:10px 0 0"><div class="abar-l">${group(btn({ label: "Editar", ico: "pen", sm: true, attrs: 'data-a="t-edit" data-id="' + esc(t._id) + '"' }), btn({ label: openHist.has(t._id) ? "Ocultar histórico" : "Histórico de trabalhos (" + all.length + ")", ico: "clock", sm: true, attrs: 'data-a="t-hist" data-id="' + esc(t._id) + '"' }))}</div></div>
+        <div class="abar" style="margin:10px 0 0"><div class="abar-l">${group(btn({ label: "Editar", ico: "pen", sm: true, href: "#/funcionarios?equipe=" + esc(t._id) }), btn({ label: openHist.has(t._id) ? "Ocultar histórico" : "Histórico de trabalhos (" + all.length + ")", ico: "clock", sm: true, attrs: 'data-a="t-hist" data-id="' + esc(t._id) + '"' }))}</div></div>
         ${openHist.has(t._id) ? `<div class="used">${all.slice(0, 20).map(osLine).join("") || "<div><small>Nenhum serviço registrado para esta equipe.</small></div>"}${all.length > 20 ? `<div><small>Mostrando os 20 mais recentes de ${all.length}.</small></div>` : ""}</div>` : ""}</div>`;
     }).join("") || '<div class="card note">Nenhuma equipe cadastrada. Toque em “+ Nova equipe”. Trabalhando sozinho, crie uma equipe com o seu nome.</div>';
   };
@@ -225,20 +201,12 @@ async function screen(view) {
         <div class="b">${btn({ label: "Desfazer", ico: "trash", kind: "danger", sm: true, attrs: 'data-a="unpay" data-id="' + esc(r._id) + '"' })}</div></div>`).join("")}</div>` : `<p class="note">${pagos.length ? "Nenhum pagamento encontrado nesta busca." : "Nenhum pagamento registrado ainda."}</p>`}</div>`;
     if (lbPag) lbPag.refresh();
   };
-  const drawAll = () => { drawKpis(); drawSList(); drawSEdit(); drawSched(); drawAvail(); drawTEdit(); drawTList(); drawPag(); };
+  const drawAll = () => { drawKpis(); drawSList(); drawSched(); drawAvail(); drawTList(); drawPag(); };
   const show = id => { tab = id; $$("[data-panel]").forEach(p => { p.hidden = p.dataset.panel !== id; }); $$("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === id))); };
-  const openEditor = (type, rec) => {
-    Object.keys(E).forEach(k => delete E[k]);
-    Object.assign(E, type === "team" ? { ...blankTeam(), ...rec, membros: [...(rec.membros || [])] } : { ...blankStaff(), ...rec });
-    ed = { type, id: rec._id || "" }; armed = null; drawSEdit(); drawTEdit();
-    const box = $(type === "team" ? "#tEdit" : "#sEdit"); if (box.scrollIntoView) box.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  };
-  const closeEditor = () => { ed = null; armed = null; drawSEdit(); drawTEdit(); };
   const armDelete = b => armBtn(b); // 1º toque pede confirmação, 2º exclui
 
 
   /* ---------- ações ---------- */
-  bindForm(view, E, () => {});
   // cada barra de busca é ligada só dentro da sua própria aba (há duas telas com busca aqui)
   const lb = bindListBar($('[data-panel="func"]'), { onSearch: t => { busca = t; drawSList(); lb.refresh(); }, onClear: () => { busca = ""; drawSList(); }, active: () => 0 });
   lbPag = bindListBar($('[data-panel="pag"]'), { onSearch: t => { pagBusca = t; drawPag(); }, active: () => (pagTipoF ? 1 : 0), onApply: drawPag,
@@ -248,20 +216,8 @@ async function screen(view) {
     view.querySelectorAll("#pagChips .chip").forEach(x => x.setAttribute("aria-pressed", String(x === c))); drawPag();
   });
   view.addEventListener("change", e => {
-    if (!ed || ed.type !== "team") return;
-    const m = e.target.dataset && e.target.dataset.m;
-    if (m !== undefined) {
-      const s = new Set(E.membros || []); e.target.checked ? s.add(m) : s.delete(m); E.membros = [...s];
-      if (!e.target.checked && E.responsavelId === m) E.responsavelId = "";
-      drawTEdit();
-    } else if (e.target.matches && e.target.matches('[data-k="responsavelId"]') && E.responsavelId && !(E.membros || []).includes(E.responsavelId)) {
-      E.membros = [...(E.membros || []), E.responsavelId]; drawTEdit(); // o responsável também é integrante
-    }
-  });
-  view.addEventListener("change", e => {
     if (e.target.id === "schDate" && e.target.value) { schedDay = e.target.value; drawSched(); }
     if (e.target.id === "payDate" && e.target.value) payDate = e.target.value;
-    if (ed && ed.type === "staff" && e.target.matches && e.target.matches('[data-k="pagTipo"]')) { E.pagTipo = e.target.value; if (E.pagTipo && !E.pagDesde) E.pagDesde = today(); drawSEdit(); }
   });
   view.addEventListener("click", async e => {
     const tb = e.target.closest("[data-tab]"); if (tb) return show(tb.dataset.tab);
@@ -272,42 +228,8 @@ async function screen(view) {
       if (a === "sch-today") { schedDay = today(); return drawSched(); }
       if (a === "sch-mode") { schedMode = b.dataset.m; return drawSched(); }
       if (a === "sch-day") { schedDay = b.dataset.d; schedMode = "dia"; return drawSched(); }
-      if (a === "s-new") { show("func"); return openEditor("staff", {}); }
-      if (a === "t-new") { show("eq"); return openEditor("team", {}); }
-      if (a === "s-edit") return openEditor("staff", staff.find(x => x._id === id) || {});
-      if (a === "t-edit") return openEditor("team", teams.find(x => x._id === id) || {});
-      if (a === "cancel") return closeEditor();
       if (a === "t-hist") { openHist.has(id) ? openHist.delete(id) : openHist.add(id); return drawTList(); }
 
-      if (a === "s-save") {
-        const rec = { ...E, nome: (E.nome || "").trim() };
-        if (!rec.nome) { toast("Informe o nome do funcionário."); return; }
-        if (rec.pagTipo === "mensal" && num(rec.salario) <= 0) { toast("Informe o salário mensal."); return; }
-        
-        if (rec.pagTipo && !rec.pagDesde) rec.pagDesde = today();
-        await saveItem("staff", rec); await reload(); closeEditor(); drawAll(); toast("Funcionário salvo");
-      }
-      if (a === "s-del") {
-        if (!armDelete(b)) return;
-        for (const t of teamsOf(ed.id)) await saveItem("teams", { ...t, membros: (t.membros || []).filter(x => x !== ed.id), responsavelId: t.responsavelId === ed.id ? "" : t.responsavelId });
-        await removeItem("staff", ed.id); await reload(); closeEditor(); drawAll(); toast("Funcionário excluído e retirado das equipes");
-      }
-      if (a === "t-save") {
-        const nome = (E.nome || "").trim();
-        if (!nome) { toast("Informe o nome da equipe."); return; }
-        if (teams.some(x => x._id !== E._id && norm(x.nome) === norm(nome))) { toast("Já existe uma equipe com este nome."); return; }
-        const old = teams.find(x => x._id === E._id), membros = [...new Set(E.membros || [])];
-        if (E.responsavelId && !membros.includes(E.responsavelId)) membros.push(E.responsavelId);
-        await saveItem("teams", { ...E, nome, membros });
-        if (old && old.nome && norm(old.nome) !== norm(nome)) { // nome mudou: oferece atualizar OS e orçamentos antigos
-          const ro = orders.filter(o => norm(o.equipe) === norm(old.nome)), rc = orcs.filter(o => norm(o.equipe) === norm(old.nome));
-          if (ro.length + rc.length && window.confirm(`Há ${ro.length} OS e ${rc.length} orçamento(s) com o nome "${old.nome}".\n\nOK = atualizar todos para "${nome}"\nCancelar = manter como estão (o histórico fica separado)`)) {
-            for (const o of ro) await saveItem("orders", { ...o, equipe: nome });
-            for (const o of rc) await saveItem("orcamentos", { ...o, equipe: nome });
-          }
-        }
-        await reload(); closeEditor(); drawAll(); toast("Equipe salva");
-      }
       if (a === "pay") {
         const p = pend().find(x => x.chave === b.dataset.ch); if (!p) return;
         const inp = [...view.querySelectorAll("[data-pv]")].find(i => i.dataset.pv === p.chave), v = num(inp ? inp.value : p.valor);
@@ -323,11 +245,123 @@ async function screen(view) {
         if (r) { if (r.despId) await removeItem("despesas", r.despId); await removeItem("pagfunc", id); }
         await reload(); drawPag(); toast("Pagamento desfeito: voltou para a lista de pendentes");
       }
-      if (a === "t-del") {
-        if (!armDelete(b)) return;
-        await removeItem("teams", ed.id); await reload(); closeEditor(); drawAll(); toast("Equipe excluída. As OS antigas continuam com o nome dela.");
-      }
     } catch (err) { console.error(err); toast("Não foi possível concluir a ação."); }
   });
   drawAll();
+  show(tab);
+}
+
+/* ============ FICHA DO FUNCIONÁRIO: #/funcionarios?novo=1 ou ?id=ID (página própria, como a ficha do veículo) ============ */
+async function fichaStaff(view) {
+  const q = params(), id = q.get("id") || "";
+  const [staff, teams] = await Promise.all([listAll("staff", true), listAll("teams", true)]);
+  const rec = id ? staff.find(x => x._id === id) : null;
+  const voltar = btn({ label: "Voltar aos funcionários", ico: "arrowLeft", href: "#/funcionarios" });
+  if (id && !rec) { view.innerHTML = pageHead("Funcionário") + '<div class="banner">Funcionário não encontrado.</div>' + bar({ left: [voltar] }); return; }
+  const E = { ...blankStaff(), ...(rec || {}) };
+  view.innerHTML = pageHead(id ? (E.nome || "Funcionário") : "Novo funcionário", id ? "Ficha do funcionário" : "Preencha os dados e salve") +
+    bar({ left: [group(btn({ label: "Salvar", ico: "save", kind: "pri", cls: "js-save" })), '<span class="dirty" id="dirty" hidden>● Alterações não salvas</span>'],
+      right: [id && btn({ label: "Excluir funcionário", ico: "trash", kind: "danger", cls: "js-del" }), voltar].filter(Boolean) }) +
+    '<div class="card" id="fCard"></div>';
+  const $ = s => view.querySelector(s), dirty = () => { $("#dirty").hidden = false; };
+  const draw = () => {
+    $("#fCard").innerHTML = `<h2>Dados do funcionário</h2>
+      <div class="row"><label class="f"><span>Nome</span><input data-k="nome" autocomplete="off"></label><label class="f"><span>Telefone</span><input data-k="tel" data-mask="tel" inputmode="tel" placeholder="(81) 90000-0000"></label></div>
+      <div class="row"><label class="f"><span>Cargo / função</span><input data-k="funcao" list="dlFuncao" placeholder="Ex.: Motorista" autocomplete="off"><datalist id="dlFuncao">${FUNCOES.map(f => `<option value="${esc(f)}">`).join("")}</datalist></label>
+        <label class="f"><span>Data de contratação</span><input type="date" data-k="contratacao"></label></div>
+      <p class="note" style="margin:-4px 0 10px">Quem dirige o veículo deve ter “Motorista” no cargo (ex.: “Dono e motorista”): é assim que o orçamento separa o motorista dos ajudantes. Todos que fazem parte da empresa ficam aqui, qualquer que seja o cargo.</p>
+      <div class="row"><label class="f"><span>Situação</span><select data-k="situacao">${options(SIT)}</select></label>
+        <label class="f"><span>Forma de pagamento</span><select data-k="pagTipo">${options(PAG_TIPOS)}</select></label></div>
+      ${E.pagTipo === "mensal" ? `<div class="row"><label class="f"><span>Salário mensal (R$)</span><input data-k="salario" data-money inputmode="decimal" placeholder="0,00"></label><label class="f"><span>Dia do pagamento (1 a 28)</span><input data-k="diaPag" inputmode="numeric" placeholder="5"></label></div>` : ""}
+      ${E.pagTipo === "frete" ? `<div class="row"><label class="f"><span>Valor padrão por frete (R$)</span><input data-k="valorFrete" data-money inputmode="decimal" placeholder="0,00"></label><span></span></div><p class="note" style="margin:-4px 0 10px">É o valor combinado por frete. Ele entra no <b>custo do orçamento</b> (a função “Motorista” vai no frete; as demais, como “Ajudante”, na linha de ajudantes) sempre que ele estiver na equipe do serviço, e é o que aparece para pagar quando o frete termina. Você pode mudar o valor em cada orçamento ou OS. Se ele não fizer frete com valor combinado, deixe em branco.</p>` : ""}
+      ${E.pagTipo ? `<div class="row"><label class="f"><span>Começa a valer em</span><input type="date" data-k="pagDesde"></label><span></span></div><p class="note" style="margin:-4px 0 10px">Só entram na conta os pagamentos a partir desta data. Para cobrar serviços ou meses que já passaram, coloque uma data anterior.</p>` : ""}
+      <div class="row r1"><label class="f"><span>Observações</span><textarea data-k="obs" rows="3"></textarea></label></div>
+      `;
+    fillForm($("#fCard"), E);
+  };
+  bindForm(view, E, dirty);
+  view.addEventListener("change", e => {
+    if (e.target.matches && e.target.matches('[data-k="pagTipo"]')) { E.pagTipo = e.target.value; if (E.pagTipo && !E.pagDesde) E.pagDesde = today(); draw(); dirty(); }
+  });
+  view.addEventListener("click", async e => {
+    const b = e.target.closest(".js-save, .js-del"); if (!b) return;
+    try {
+      if (b.classList.contains("js-save")) {
+        const r = { ...E, nome: (E.nome || "").trim() };
+        if (!r.nome) { toast("Informe o nome do funcionário."); return; }
+        if (r.pagTipo === "mensal" && num(r.salario) <= 0) { toast("Informe o salário mensal."); return; }
+        if (r.pagTipo && !r.pagDesde) r.pagDesde = today();
+        await saveItem("staff", r); toast("Funcionário salvo"); location.hash = "#/funcionarios";
+      } else {
+        if (!armBtn(b)) return;
+        for (const t of teams.filter(t => (t.membros || []).includes(id))) await saveItem("teams", { ...t, membros: (t.membros || []).filter(x => x !== id), responsavelId: t.responsavelId === id ? "" : t.responsavelId });
+        await removeItem("staff", id); toast("Funcionário excluído e retirado das equipes"); location.hash = "#/funcionarios";
+      }
+    } catch (err) { console.error(err); toast("Não foi possível concluir a ação."); }
+  });
+  draw();
+}
+
+/* ============ FICHA DA EQUIPE: #/funcionarios?novaequipe=1 ou ?equipe=ID ============ */
+async function fichaTeam(view) {
+  const q = params(), id = q.get("equipe") || "";
+  const [staff, teams, orders, orcs] = await Promise.all([listAll("staff", true), listAll("teams", true), listAll("orders", true), listAll("orcamentos", true)]);
+  staff.sort(byNome);
+  const rec = id ? teams.find(x => x._id === id) : null;
+  const voltar = btn({ label: "Voltar às equipes", ico: "arrowLeft", href: "#/funcionarios?aba=eq" });
+  if (id && !rec) { view.innerHTML = pageHead("Equipe") + '<div class="banner">Equipe não encontrada.</div>' + bar({ left: [voltar] }); return; }
+  const E = { ...blankTeam(), ...(rec || {}), membros: [...((rec && rec.membros) || [])] };
+  view.innerHTML = pageHead(id ? (E.nome || "Equipe") : "Nova equipe", id ? "Ficha da equipe" : "Escolha o responsável e os integrantes") +
+    bar({ left: [group(btn({ label: "Salvar", ico: "save", kind: "pri", cls: "js-save" })), '<span class="dirty" id="dirty" hidden>● Alterações não salvas</span>'],
+      right: [id && btn({ label: "Excluir equipe", ico: "trash", kind: "danger", cls: "js-del" }), voltar].filter(Boolean) }) +
+    '<div class="card" id="fCard"></div>';
+  const $ = s => view.querySelector(s), dirty = () => { $("#dirty").hidden = false; };
+  const draw = () => {
+    const cand = staff.filter(s => sit(s) === "ativo" || (E.membros || []).includes(s._id));
+    $("#fCard").innerHTML = `<h2>Dados da equipe</h2>
+      <div class="row"><label class="f"><span>Nome da equipe</span><input data-k="nome" placeholder="Ex.: Equipe 1" autocomplete="off"></label>
+        <label class="f"><span>Responsável</span><select data-k="responsavelId"><option value="">Sem responsável</option>${cand.map(s => `<option value="${esc(s._id)}">${esc(s.nome)}</option>`).join("")}</select></label></div>
+      ${id ? '<p class="note" style="margin:-4px 0 10px">Se mudar o nome, o sistema pergunta se deve atualizar as OS e orçamentos que usam o nome antigo.</p>' : ""}
+      <div class="f"><span>Integrantes</span><div class="used">${cand.map(s => `<div><label class="chk"><input type="checkbox" data-m="${esc(s._id)}" ${(E.membros || []).includes(s._id) ? "checked" : ""}> ${esc(s.nome)} <small>${s.funcao ? "(" + esc(s.funcao) + ")" : ""}${sit(s) !== "ativo" ? " · " + esc(sitLabel(sit(s))) : ""}</small></label></div>`).join("") || "<div><small>Cadastre funcionários primeiro (aba Funcionários).</small></div>"}</div></div>
+      <div class="row r1" style="margin-top:10px"><label class="chk"><input type="checkbox" data-k="ativo"> Equipe ativa (aparece na agenda e nas OS)</label></div>
+      <div class="row r1"><label class="f"><span>Observações</span><textarea data-k="obs" rows="3"></textarea></label></div>
+      `;
+    fillForm($("#fCard"), E);
+  };
+  bindForm(view, E, dirty);
+  view.addEventListener("change", e => {
+    const m = e.target.dataset && e.target.dataset.m;
+    if (m !== undefined) {
+      const st = new Set(E.membros || []); e.target.checked ? st.add(m) : st.delete(m); E.membros = [...st];
+      if (!e.target.checked && E.responsavelId === m) E.responsavelId = "";
+      draw(); dirty();
+    } else if (e.target.matches && e.target.matches('[data-k="responsavelId"]') && E.responsavelId && !(E.membros || []).includes(E.responsavelId)) {
+      E.membros = [...(E.membros || []), E.responsavelId]; draw(); // o responsável também é integrante
+    }
+  });
+  view.addEventListener("click", async e => {
+    const b = e.target.closest(".js-save, .js-del"); if (!b) return;
+    try {
+      if (b.classList.contains("js-save")) {
+        const nome = (E.nome || "").trim();
+        if (!nome) { toast("Informe o nome da equipe."); return; }
+        if (teams.some(x => x._id !== E._id && norm(x.nome) === norm(nome))) { toast("Já existe uma equipe com este nome."); return; }
+        const old = rec, membros = [...new Set(E.membros || [])];
+        if (E.responsavelId && !membros.includes(E.responsavelId)) membros.push(E.responsavelId);
+        await saveItem("teams", { ...E, nome, membros });
+        if (old && old.nome && norm(old.nome) !== norm(nome)) { // nome mudou: oferece atualizar OS e orçamentos antigos
+          const ro = orders.filter(o => norm(o.equipe) === norm(old.nome)), rc = orcs.filter(o => norm(o.equipe) === norm(old.nome));
+          if (ro.length + rc.length && window.confirm(`Há ${ro.length} OS e ${rc.length} orçamento(s) com o nome "${old.nome}".\n\nOK = atualizar todos para "${nome}"\nCancelar = manter como estão (o histórico fica separado)`)) {
+            for (const o of ro) await saveItem("orders", { ...o, equipe: nome });
+            for (const o of rc) await saveItem("orcamentos", { ...o, equipe: nome });
+          }
+        }
+        toast("Equipe salva"); location.hash = "#/funcionarios?aba=eq";
+      } else {
+        if (!armBtn(b)) return;
+        await removeItem("teams", id); toast("Equipe excluída. As OS antigas continuam com o nome dela."); location.hash = "#/funcionarios?aba=eq";
+      }
+    } catch (err) { console.error(err); toast("Não foi possível concluir a ação."); }
+  });
+  draw();
 }
