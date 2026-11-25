@@ -3,7 +3,7 @@
 // #/ordens?id=ID          editar       #/ordens?dup=ID   nova OS copiada de outra
 import { pageHead } from "../components/pageHead.js";
 import { overall } from "../components/ckProgress.js";
-import { esc, brl, pad, fmtD, toast, today, slug, waLink, num } from "../../js/utils.js";
+import { esc, brl, pad, fmtD, toast, today, slug, waLink, num, numCurto, nomeArquivo } from "../../js/utils.js";
 import { listAll, saveItem, removeItem, getCfg, nextNum, getFleet, getTeams } from "../firebase/db.js";
 import { ordersToCsv } from "../../js/export.js";
 import { STATUS_OS, TIPOS, INFOS, PGTOS, label, blankOS, normOS, totals, osStatus, waTextOS, blankClient, ofClient } from "../../js/domain.js";
@@ -65,7 +65,7 @@ async function list(view) {
     if (F.veic && o.veiculo !== F.veic) return false;
     if (F.cli) { const c = clients.find(x => x._id === F.cli); if (!c || !ofClient(c, [o]).length) return false; }
     const t = busca.toLowerCase().trim();
-    return !t || (pad(o.num) + " " + (o.cliNome || "") + " " + (o.cliTel || "")).toLowerCase().includes(t);
+    return !t || (numCurto(o.num) + " " + String(o.num) + " " + (o.cliNome || "") + " " + (o.cliTel || "")).toLowerCase().includes(t);
   };
   const visible = () => orders.filter(passa).filter(o => filtro === "todas" || osStatus(o) === filtro);
 
@@ -86,7 +86,7 @@ async function list(view) {
       const fin = st !== "cancelada" && T.res > 0 ? ab("quitar", "dollar", "Marcar como pago", "ok") : "";
       const manage = btn({ label: "Checklist", ico: "clipboard", sm: true, href: "#/checklist?os=" + id }) + btn({ ico: "eye", tip: "Abrir", sm: true, iconOnly: true, href: "#/ordens?id=" + id }) + btn({ ico: "copy", tip: "Duplicar", sm: true, iconOnly: true, href: "#/ordens?dup=" + id }) +
         btn({ ico: "trash", tip: "Excluir", kind: "danger", sm: true, iconOnly: true, attrs: `data-a="del" data-id="${id}"` });
-      return `<div class="h"><div class="n">${pad(o.num)}</div>
+      return `<div class="h"><div class="n">${numCurto(o.num)}</div>
         <div class="t"><b>${esc(o.cliNome || "Sem nome")}</b><small>${fmtD(o.data)}${o.cliTel ? " · " + esc(o.cliTel) : ""}${o.veiculo ? " · " + esc(o.veiculo) : ""} · <span class="badge ${st}">${label(STATUS_OS, st)}</span>${T.res > 0 && st !== "cancelada" ? ` · falta ${brl(T.res)}` : ""}${st !== "cancelada" ? ` · Checklist: ${ckBy[o._id] ? overall(ckBy[o._id]) + "%" : "não iniciado"}` : ""}</small></div>
         <div class="v">${brl(T.tot)}</div>
         <div class="b">${group(flow)}${group(wa)}${group(fin)}${group(manage)}</div></div>`;
@@ -130,7 +130,7 @@ async function list(view) {
     const saved = await saveItem("orders", rec);
     orders[orders.findIndex(x => x._id === o._id)] = saved; draw();
     const T = totals(saved);
-    toast(st === "concluida" ? "OS " + pad(o.num) + " finalizada" + (T.res > 0 ? ". Ainda falta receber " + brl(T.res) : "") : "OS " + pad(o.num) + ": " + label(STATUS_OS, st).toLowerCase());
+    toast(st === "concluida" ? "OS " + numCurto(o.num) + " finalizada" + (T.res > 0 ? ". Ainda falta receber " + brl(T.res) : "") : "OS " + numCurto(o.num) + ": " + label(STATUS_OS, st).toLowerCase());
   };
   $("#rows").addEventListener("click", async e => {
     const b = e.target.closest("button[data-a]"); if (!b) return;
@@ -145,14 +145,14 @@ async function list(view) {
         const T0 = totals(o); if (!(T0.res > 0)) { toast("Esta OS já está quitada."); return; }
         const saved = await saveItem("orders", { ...o, pago: T0.tot });
         orders[orders.findIndex(x => x._id === o._id)] = saved; draw();
-        toast("OS " + pad(o.num) + " quitada: " + brl(T0.tot) + " recebido"); return;
+        toast("OS " + numCurto(o.num) + " quitada: " + brl(T0.tot) + " recebido"); return;
       }
       if (a === "start") await setStatus(o, "andamento");
       if (a === "finish") await setStatus(o, "concluida");
       if (a === "reopen") await setStatus(o, "aberta");
       if (a === "del") {
         if (!armBtn(b)) return;
-        await removeItem("orders", o._id); orders.splice(orders.indexOf(o), 1); draw(); toast("OS " + pad(o.num) + " excluída");
+        await removeItem("orders", o._id); orders.splice(orders.indexOf(o), 1); draw(); toast("OS " + numCurto(o.num) + " excluída");
       }
     } catch (err) { console.error(err); toast("Não foi possível concluir a ação."); }
   });
@@ -181,7 +181,7 @@ async function editor(view, q) {
       group(btn({ label: "Enviar resumo por WhatsApp", ico: "whatsapp", kind: "wa", cls: "js-wa" }))],
     right: [S._id && btn({ label: "Checklist", ico: "clipboard", href: "#/checklist?os=" + S._id }), btn({ label: "Voltar à lista", ico: "arrowLeft", href: "#/ordens" })].filter(Boolean) });
 
-  view.innerHTML = pageHead(S._id ? "OS " + pad(S.num) : "Nova OS", "Preencha, confira a prévia ao lado e salve") + `
+  view.innerHTML = pageHead(S._id ? "OS " + numCurto(S.num) : "Nova OS", "Preencha, confira a prévia ao lado e salve") + `
     <div class="tabs" id="tabs"><button type="button" data-t="form" aria-selected="true">Preencher</button><button type="button" data-t="prev" aria-selected="false">Prévia</button></div>
     <div class="editor" data-tab="form"><div class="formcol">${actions}
       ${S.orcamentoId ? '<div class="banner">Esta OS foi gerada a partir de um orçamento aprovado.</div>' : ""}
@@ -244,7 +244,7 @@ async function editor(view, q) {
   async function save(quiet) {
     if (!S.num) { toast("Informe o número da OS"); return false; }
     if (!(S.veiculo || "").trim()) { toast("Escolha o veículo em “Agendamento”."); return false; }
-    if (orders.some(o => o.num === S.num && o._id !== S._id)) { toast("Já existe uma OS com o número " + pad(S.num) + "."); return false; }
+    if (orders.some(o => o.num === S.num && o._id !== S._id)) { toast("Já existe uma OS com o número " + numCurto(S.num) + "."); return false; }
     try {
       if (!(await agendaOk())) return false;
       let c = matchClient(S, clients);
@@ -259,7 +259,7 @@ async function editor(view, q) {
       S._id = saved._id; const i = orders.findIndex(o => o._id === S._id);
       if (i >= 0) orders[i] = saved; else orders.push(saved);
       history.replaceState(null, "", "#/ordens?id=" + S._id); // sem recarregar a tela
-      if (!quiet) toast("OS " + pad(S.num) + " salva");
+      if (!quiet) toast("OS " + numCurto(S.num) + " salva");
       return true;
     } catch (e) { console.error(e); toast("Não foi possível salvar a OS."); return false; }
   }
@@ -267,7 +267,7 @@ async function editor(view, q) {
   const exportAs = async kind => {
     if (!(await save(true))) return;
     const btns = $$(".js-pdf,.js-img"); btns.forEach(b => (b.disabled = true)); toast(kind === "pdf" ? "Gerando PDF…" : "Gerando imagem…");
-    try { await (kind === "pdf" ? exportPDF : exportPNG)(sheetOS(S, cfg), `OS-${pad(S.num)}-${slug(S.cliNome || "cliente")}.${kind === "pdf" ? "pdf" : "png"}`); }
+    try { await (kind === "pdf" ? exportPDF : exportPNG)(sheetOS(S, cfg), `${nomeArquivo("os", S.num, S.cliNome)}.${kind === "pdf" ? "pdf" : "png"}`); }
     catch (e) { console.error(e); toast("Erro ao gerar o arquivo."); }
     btns.forEach(b => (b.disabled = false));
   };

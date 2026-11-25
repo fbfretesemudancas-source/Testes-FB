@@ -4,7 +4,7 @@
 //  · Depois: entrega, conferência dos itens, danos, conclusão (assinatura do cliente fica para depois)
 // Dados: companies/{uid}/checklists (1 por OS) e, dentro dele, a subcoleção "fotos" (imagens já reduzidas).
 import { pageHead } from "../components/pageHead.js";
-import { esc, toast, fmtD, pad, num } from "../../js/utils.js";
+import { esc, toast, fmtD, pad, num, numCurto } from "../../js/utils.js";
 import { listAll, saveItem, removeItem, photosOf, addPhoto, delPhoto } from "../firebase/db.js";
 import { addrText, osStatus, label, STATUS_OS } from "../../js/domain.js";
 import { icon } from "../components/icons.js";
@@ -90,11 +90,11 @@ async function list(view) {
     const rows = orders.filter(o => {
       const st = osStatus(o);
       if (filtro === "abertas" ? !["aberta", "andamento"].includes(st) : filtro === "concl" ? st !== "concluida" : false) return false;
-      return !t || (String(o.cliNome || "") + " " + pad(o.num)).toLowerCase().includes(t);
+      return !t || (String(o.cliNome || "") + " " + numCurto(o.num) + " " + pad(o.num)).toLowerCase().includes(t);
     }).sort((a, b) => filtro === "abertas" ? String(a.data || "").localeCompare(String(b.data || "")) : String(b.data || "").localeCompare(String(a.data || "")));
     view.querySelector("#rows").innerHTML = rows.map(o => {
       const c = byOs[o._id], pc = c ? overall(c) : 0;
-      return `<div class="h"><div class="n">${pad(o.num)}</div><div class="t"><b>${esc(o.cliNome || "Sem nome")}</b><small>${esc(fmtD(o.data))}${o.equipe ? " · " + esc(o.equipe) : ""}${o.veiculo ? " · " + esc(o.veiculo) : ""} · <span class="badge ${osStatus(o)}">${label(STATUS_OS, osStatus(o))}</span> · ${c ? "checklist " + pc + "%" : "ainda não iniciado"}</small></div>
+      return `<div class="h"><div class="n">${numCurto(o.num)}</div><div class="t"><b>${esc(o.cliNome || "Sem nome")}</b><small>${esc(fmtD(o.data))}${o.equipe ? " · " + esc(o.equipe) : ""}${o.veiculo ? " · " + esc(o.veiculo) : ""} · <span class="badge ${osStatus(o)}">${label(STATUS_OS, osStatus(o))}</span> · ${c ? "checklist " + pc + "%" : "ainda não iniciado"}</small></div>
         <div class="v"></div><div class="b">${btn({ label: c ? "Abrir checklist" : "Iniciar checklist", ico: c ? "clipboard" : "play", kind: "pri", sm: true, href: "#/checklist?os=" + esc(o._id) })}</div></div>`;
     }).join("") || '<div class="card note">Nenhuma OS encontrada neste filtro.</div>';
     if (lb) lb.refresh();
@@ -205,7 +205,7 @@ async function detail(view, osId) {
   const draw = () => { const y = window.scrollY, st = (view.querySelector("#ckStatus") || {}).textContent || ""; view.querySelector("#ckHead").innerHTML = head(); view.querySelector("#ckPanel").innerHTML = whoCard() + (stage === "antes" ? pAntes() : stage === "durante" ? pDurante() : pDepois()); setStatus(st); window.scrollTo(0, y); };
   const drawHead = () => { const st = (view.querySelector("#ckStatus") || {}).textContent || ""; view.querySelector("#ckHead").innerHTML = head(); setStatus(st); };
 
-  view.innerHTML = pageHead("Checklist · OS " + pad(os.num), os.cliNome || "") +
+  view.innerHTML = pageHead("Checklist · OS " + numCurto(os.num), os.cliNome || "") +
     bar({ left: [btn({ label: "Outras OS", ico: "arrowLeft", href: "#/checklist" })], right: [btn({ label: "Abrir OS", ico: "external", href: "#/ordens?id=" + esc(os._id) })], cls: "tight" }) + '<div id="ckHead"></div><div id="ckPanel"></div>';
   draw();
 

@@ -3,7 +3,7 @@
 //   · mensal: um pagamento por mês, vencendo no "dia do pagamento", a partir de "Começa a valer em"
 //   · frete:  um pagamento por OS concluída da equipe do funcionário. Valor: o da OS (definido no orçamento) ou, se não houver, o padrão da ficha
 // Ao pagar, a página cria uma despesa (que o Painel soma) e um registro em "pagfunc" para não cobrar de novo.
-import { num, today } from "./utils.js";
+import { num, today, numCurto } from "./utils.js";
 import { osStatus } from "./domain.js";
 import { addDays } from "./agenda.js";
 
@@ -41,7 +41,7 @@ export function pendencias(staff, teams, orders, pagos, hoje = today()) {
         if (feitos.has(chave)) continue;
         const linha = (o.pagEq || []).find(r => r.id === s._id), daOS = linha ? num(linha.valor) : 0, v = daOS > 0 ? daOS : padrao; // sem nenhum dos dois: aparece com valor em branco para você informar
         out.push({ chave, tipo: "frete", staffId: s._id, nome: s.nome, osId: o._id, osNum: o.num, venc: o.data, valor: v, st: "pagar", origem: daOS > 0 ? "os" : v > 0 ? "ficha" : "", semValor: v <= 0,
-          titulo: "Frete OS " + String(o.num).padStart(4, "0") + " · " + (o.cliNome || "Sem nome") });
+          titulo: "Frete OS " + numCurto(o.num) + " · " + (o.cliNome || "Sem nome") });
       }
     }
   }

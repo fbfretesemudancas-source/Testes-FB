@@ -1,5 +1,5 @@
 // Agenda: eventos (OS + orçamentos aguardando), conflitos e datas. Sem DOM, fácil de testar.
-import { num, pad, padO, fmtD } from "./utils.js";
+import { num, pad, padO, fmtD, numCurto } from "./utils.js";
 import { osStatus } from "./domain.js";
 
 export const STATUS_AG = { agendado: "Agendado", aguardando: "Aguardando confirmação", concluido: "Concluído", cancelado: "Cancelado" };
@@ -29,14 +29,14 @@ export function agendaEvents(orders, orcs, cfg = {}) {
     if (!o.data) return;
     out.push({ key: "os:" + o._id, tipo: "os", id: o._id, num: o.num, cliente: o.cliNome || "", date: o.data, ini: o.horaIni || "", fim: o.horaFim || "",
       ...slotOf(o.horaIni, o.horaFim, dur), veiculo: o.veiculo || "", equipe: o.equipe || "", status: agStatusOS(o), rota: rotaTxt(o),
-      href: "#/ordens?id=" + o._id, nome: "OS " + pad(o.num) });
+      href: "#/ordens?id=" + o._id, nome: "OS " + numCurto(o.num) });
   });
   (orcs || []).forEach(o => {
     const dh = o.col && o.col.dh;
     if (o.status !== "aguardando" || o.osId || !dhDate(dh)) return;
     out.push({ key: "orc:" + o._id, tipo: "orc", id: o._id, num: o.num, cliente: o.cliNome || "", date: dhDate(dh), ini: dhTime(dh), fim: "",
       ...slotOf(dhTime(dh), "", dur), veiculo: o.veiculo || "", equipe: o.equipe || "", status: "aguardando", rota: rotaTxt(o),
-      href: "#/orcamentos?id=" + o._id, nome: "Orçamento " + padO(o.num) });
+      href: "#/orcamentos?id=" + o._id, nome: "Orçamento " + numCurto(o.num) });
   });
   return out;
 }

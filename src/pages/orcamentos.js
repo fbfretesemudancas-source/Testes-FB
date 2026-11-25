@@ -1,7 +1,7 @@
 // Orçamentos: criar, enviar pelo WhatsApp (imagem + texto) e, quando aprovado, virar Ordem de Serviço.
 // #/orcamentos  lista   #/orcamentos?novo=1  novo   #/orcamentos?id=ID  editar   #/orcamentos?dup=ID  copiar
 import { pageHead } from "../components/pageHead.js";
-import { esc, brl, pad, padO, fmtD, toast, today, slug, waLink, num, money } from "../../js/utils.js";
+import { esc, brl, pad, padO, fmtD, toast, today, slug, waLink, num, money, numCurto, nomeArquivo } from "../../js/utils.js";
 import { listAll, saveItem, removeItem, getCfg, nextNum, getFleet, getTeams } from "../firebase/db.js";
 import { STATUS_ORC, TIPOS, SERV_SUG, COND_SUG, label, blankOrc, normOrc, syncOrc, orcSub, totals, orcToOS, waTextOrc, blankClient } from "../../js/domain.js";
 import { addrFields, checks, options, fillForm, bindForm, onResize, clientPickerHTML, bindClientLink, matchClient, clientLabel, applyClient, agendamentoCard, defaultResources } from "../components/formKit.js";
@@ -28,7 +28,7 @@ export async function render(root) {
 
 /** Pergunta a entrada ao aprovar. Devolve null (cancelou), "" (sem entrada) ou o valor digitado. */
 function askApprove(orc) {
-  const r = window.prompt(`Aprovar o orçamento ${padO(orc.num)} e gerar a Ordem de Serviço?\n\nEntrada já recebida (R$). Deixe em branco se ainda não recebeu:`, "");
+  const r = window.prompt(`Aprovar o orçamento ${numCurto(orc.num)} e gerar a Ordem de Serviço?\n\nEntrada já recebida (R$). Deixe em branco se ainda não recebeu:`, "");
   if (r === null) return null;
   if (r.trim() && !(num(r) > 0)) { toast("Valor de entrada inválido."); return null; }
   return r.trim();
@@ -50,7 +50,7 @@ const openWa = (o, cfg) => window.open(waLink(o.cliTel, waTextOrc(o, cfg)), "_bl
  * Devolve false só se a pessoa cancelou o compartilhamento.
  */
 async function sendOrc(o, cfg) {
-  const text = waTextOrc(o, cfg), name = `Orcamento-${padO(o.num)}-${slug(o.cliNome || "cliente")}.png`;
+  const text = waTextOrc(o, cfg), name = nomeArquivo("orc", o.num, o.cliNome) + ".png";
   let blob = null;
   try {
     blob = await renderPNG(sheetOrc(o, cfg), ORC);
@@ -83,7 +83,7 @@ async function list(view) {
     const cnt = k => orcs.filter(o => k === "todas" || o.status === k).length;
     $("#chips").innerHTML = [["todas", "Todos"], ...STATUS_ORC].map(([k, l]) => `<button class="chip" type="button" data-f="${k}" aria-pressed="${k === filtro}">${l} (${cnt(k)})</button>`).join("");
     const t = busca.toLowerCase().trim();
-    $("#rows").innerHTML = orcs.filter(o => (filtro === "todas" || o.status === filtro) && (!t || (padO(o.num) + " " + (o.cliNome || "") + " " + (o.cliTel || "")).toLowerCase().includes(t))).map(o => {
+    $("#rows").innerHTML = orcs.filter(o => (filtro === "todas" || o.status === filtro) && (!t || (numCurto(o.num) + " " + padO(o.num) + " " + (o.cliNome || "") + " " + (o.cliTel || "")).toLowerCase().includes(t))).map(o => {
       const id = esc(o._id), st = o.status || "rascunho", T = totals(o);
       const ab = (a, ico, label, kind = "", tip = "") => btn({ label, ico, kind, tip, sm: true, attrs: `data-a="${a}" data-id="${id}"` });
       const wa = st === "convertido" || st === "recusado" ? [] : [ab("img", "whatsapp", "Enviar com imagem", "wa", "Envia a imagem do orçamento e o texto pelo WhatsApp"), ab("wa", "whatsapp", "Só texto", "wa", "Envia somente o texto pelo WhatsApp")];
@@ -91,7 +91,7 @@ async function list(view) {
         : st === "recusado" ? "" : ab("ok", "check", "Aprovar e gerar OS", "ok");
       const manage = btn({ ico: "eye", tip: "Abrir", sm: true, iconOnly: true, href: "#/orcamentos?id=" + id }) + btn({ ico: "copy", tip: "Duplicar", sm: true, iconOnly: true, href: "#/orcamentos?dup=" + id }) +
         btn({ ico: "trash", tip: "Excluir", kind: "danger", sm: true, iconOnly: true, attrs: `data-a="del" data-id="${id}"` });
-      return `<div class="h"><div class="n" style="font-size:16px">${padO(o.num)}</div>
+      return `<div class="h"><div class="n" style="font-size:16px">${numCurto(o.num)}</div>
         <div class="t"><b>${esc(o.cliNome || "Sem nome")}</b><small>${fmtD(o.data)}${o.cliTel ? " · " + esc(o.cliTel) : ""} · <span class="badge ${st}">${label(STATUS_ORC, st)}</span>${vencido(o) ? ' <span class="badge vencido">Vencido</span>' : ""}${o.validade && st === "aguardando" ? " · válido até " + fmtD(o.validade) : ""}</small></div>
         <div class="v">${brl(T.tot)}</div>
         <div class="b">${group(wa)}${group(flow)}${group(manage)}</div></div>`;
@@ -120,11 +120,11 @@ async function list(view) {
       if (a === "ok") {
         if (!(await confirmAgenda(candOS(orcToOS(normOrc(o), 0))))) return;
         const entrada = askApprove(o); if (entrada === null) return;
-        const r = await approveOrc(o, entrada); toast("OS " + pad(r.os.num) + " criada a partir do orçamento"); location.hash = "#/ordens?id=" + r.os._id;
+        const r = await approveOrc(o, entrada); toast("OS " + numCurto(r.os.num) + " criada a partir do orçamento"); location.hash = "#/ordens?id=" + r.os._id;
       }
       if (a === "del") {
         if (!armBtn(b)) return;
-        await removeItem("orcamentos", o._id); orcs.splice(orcs.indexOf(o), 1); draw(); toast("Orçamento " + padO(o.num) + " excluído");
+        await removeItem("orcamentos", o._id); orcs.splice(orcs.indexOf(o), 1); draw(); toast("Orçamento " + numCurto(o.num) + " excluído");
       }
     } catch (err) { console.error(err); toast("Não foi possível concluir a ação."); }
   });
@@ -155,7 +155,7 @@ async function editor(view, q) {
       group(btn({ label: "Baixar PDF", ico: "file", cls: "js-pdf" }), btn({ label: "Baixar imagem", ico: "image", cls: "js-img" }))],
     right: [btn({ label: "Voltar à lista", ico: "arrowLeft", href: "#/orcamentos" })] });
 
-  view.innerHTML = pageHead(O._id ? "Orçamento " + padO(O.num) : "Novo orçamento", "A imagem do orçamento é montada ao lado enquanto você preenche") + `
+  view.innerHTML = pageHead(O._id ? "Orçamento " + numCurto(O.num) : "Novo orçamento", "A imagem do orçamento é montada ao lado enquanto você preenche") + `
     <div class="tabs" id="tabs"><button type="button" data-t="form" aria-selected="true">Preencher</button><button type="button" data-t="prev" aria-selected="false">Prévia</button></div>
     <div class="editor" data-tab="form"><div class="formcol">${actions}
       ${O.osId ? '<div class="banner">Este orçamento já foi aprovado e virou uma Ordem de Serviço. Alterações aqui não mudam a OS.</div>' : ""}
@@ -210,7 +210,7 @@ async function editor(view, q) {
     syncOrc(O);
     if (!O.num) { toast("Informe o número do orçamento"); return false; }
     if (!(O.veiculo || "").trim()) { toast("Escolha o veículo em “Agendamento”: o frete é calculado com o consumo e a manutenção dele."); return false; }
-    if (orcs.some(o => o.num === O.num && o._id !== O._id)) { toast("Já existe um orçamento com o número " + padO(O.num) + "."); return false; }
+    if (orcs.some(o => o.num === O.num && o._id !== O._id)) { toast("Já existe um orçamento com o número " + numCurto(O.num) + "."); return false; }
     try {
       if (O.status === "aguardando" && !(await agendaOk())) return false; // orçamento enviado segura o horário
       let c = matchClient(O, clients);
@@ -223,13 +223,13 @@ async function editor(view, q) {
       O._id = saved._id; const i = orcs.findIndex(o => o._id === O._id);
       if (i >= 0) orcs[i] = saved; else orcs.push(saved);
       history.replaceState(null, "", "#/orcamentos?id=" + O._id);
-      if (!quiet) toast("Orçamento " + padO(O.num) + " salvo");
+      if (!quiet) toast("Orçamento " + numCurto(O.num) + " salvo");
       return true;
     } catch (e) { console.error(e); toast("Não foi possível salvar o orçamento."); return false; }
   }
   $$(".js-save").forEach(b => b.addEventListener("click", () => save()));
 
-  const fname = ext => `Orcamento-${padO(O.num)}-${slug(O.cliNome || "cliente")}.${ext}`;
+  const fname = ext => `${nomeArquivo("orc", O.num, O.cliNome)}.${ext}`;
   $$(".js-share").forEach(b => b.addEventListener("click", async () => {
     if (!(await save(true))) return;
     if (!(await agendaOk())) return; // ao enviar, o orçamento passa a segurar o horário
@@ -246,7 +246,7 @@ async function editor(view, q) {
     const entrada = askApprove(O); if (entrada === null) return;
     try {
       if (!(await save(true))) return;
-      const r = await approveOrc(O, entrada); toast("OS " + pad(r.os.num) + " criada a partir do orçamento"); location.hash = "#/ordens?id=" + r.os._id;
+      const r = await approveOrc(O, entrada); toast("OS " + numCurto(r.os.num) + " criada a partir do orçamento"); location.hash = "#/ordens?id=" + r.os._id;
     } catch (e) { console.error(e); toast("Não foi possível gerar a OS. Confira a lista de OS antes de tentar de novo."); }
   }));
   const exportAs = async kind => {

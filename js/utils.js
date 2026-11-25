@@ -74,3 +74,12 @@ export const isUrl = u => /^https?:\/\/\S+\.\S+/i.test(String(u || '').trim());
 
 // Número do orçamento no formato do modelo: 000125
 export const padO = n => String(n || 0).padStart(6, '0');
+/** Número para exibir nos cards, títulos e avisos: tira os zeros da esquerda e deixa UM zero (000012 → 012, 000150 → 0150). */
+export const numCurto = n => "0" + (parseInt(String(n == null ? "" : n).replace(/\D/g, ""), 10) || 0);
+/** Nome curto do cliente para o arquivo: primeiro nome + último sobrenome ("Maria das Dores Silva" → "Maria Silva"). */
+export function nomeCurto(nome) {
+  const w = String(nome || "").replace(/[\\/:*?"<>|\u0000-\u001f]/g, " ").trim().split(/\s+/).filter(Boolean);
+  return !w.length ? "cliente" : w.length === 1 ? w[0] : w[0] + " " + w[w.length - 1];
+}
+/** Nome do arquivo baixado (sem extensão): "O.S.0150 - Maria Silva" ou "Orç.0150 - Maria Silva". */
+export const nomeArquivo = (tipo, num, cliente) => (tipo === "os" ? "O.S." : "Orç.") + numCurto(num) + " - " + nomeCurto(cliente);

@@ -2,7 +2,7 @@
 // Todo gasto vai para "despesas" (a coleção que o Painel lê), com o veículo marcado.
 // #/frota lista · #/frota?novo=1 novo veículo · #/frota?id=ID&aba=manutencao ficha
 import { pageHead } from "../components/pageHead.js";
-import { esc, toast, today, num, money, brl, fmtD, isUrl, pad } from "../../js/utils.js";
+import { esc, toast, today, num, money, brl, fmtD, isUrl, pad, numCurto } from "../../js/utils.js";
 import { listAll, saveItem, removeItem, getCfg, saveCfg, migrateFleet } from "../firebase/db.js";
 import { fillForm, bindForm, options } from "../components/formKit.js";
 import { btn, group, bar, armBtn } from "../components/ui.js";
@@ -203,7 +203,7 @@ async function ficha(view, q) {
   }
   const usoRow = u => {
     const ok = usoCompleto(u), inval = kmInvalido(u), pend = semDevolucao(u);
-    const origem = u.origem === "checklist" ? `Checklist da OS ${esc(pad(u.osNum || 0))}${u.cliNome ? " · " + esc(u.cliNome) : ""}` : "Registro avulso";
+    const origem = u.origem === "checklist" ? `Checklist da OS ${esc(numCurto(u.osNum || 0))}${u.cliNome ? " · " + esc(u.cliNome) : ""}` : "Registro avulso";
     const flag = inval ? '<span class="badge vencido">km de devolução menor que o de retirada</span>' : pend ? '<span class="badge aguardando">falta o km de devolução</span>' : "";
     const acao = u.origem === "checklist"
       ? (u.osId ? `${btn({ label: "Abrir checklist", ico: "clipboard", sm: true, href: "#/checklist?os=" + esc(u.osId) })}` : "")

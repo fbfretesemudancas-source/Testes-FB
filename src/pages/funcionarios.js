@@ -3,7 +3,7 @@
 // Coleções: companies/{uid}/staff (funcionários) e companies/{uid}/teams (equipes).
 // A OS e o orçamento guardam o NOME da equipe (campo "equipe"), por isso a agenda e os conflitos continuam iguais.
 import { pageHead } from "../components/pageHead.js";
-import { esc, toast, fmtD, pad, today, num, brl, money } from "../../js/utils.js";
+import { esc, toast, fmtD, pad, today, num, brl, money, numCurto } from "../../js/utils.js";
 import { pendencias, PAG_TIPOS, mesLabel } from "../../js/pagfunc.js";
 import { listAll, saveItem, removeItem, migrateTeams, getCfg } from "../firebase/db.js";
 import { fillForm, bindForm, options } from "../components/formKit.js";
@@ -109,7 +109,7 @@ async function screen(view, q) {
     $("#avail").innerHTML = `<div class="card"><h2>Funcionários disponíveis</h2>${f.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${f.map(s => `<span class="badge">${esc(s.nome)}${s.funcao ? " · " + esc(s.funcao) : ""}</span>`).join("")}</div><p class="note" style="margin-top:8px">Ativos que ainda não estão em nenhuma equipe.</p>`
       : `<p class="note">${staff.length ? "Todos os funcionários ativos já estão em alguma equipe." : "Cadastre funcionários na aba Funcionários para montar as equipes."}</p>`}</div>`;
   };
-  const osLine = o => `<div><a href="#/ordens?id=${esc(o._id)}" style="color:inherit;text-decoration:none">${esc(fmtD(o.data))} · <b>OS ${pad(o.num)}</b> · ${esc(o.cliNome || "Sem nome")}${o.veiculo ? " · " + esc(o.veiculo) : ""} <span class="badge ${osStatus(o)}">${label(STATUS_OS, osStatus(o))}</span></a></div>`;
+  const osLine = o => `<div><a href="#/ordens?id=${esc(o._id)}" style="color:inherit;text-decoration:none">${esc(fmtD(o.data))} · <b>OS ${numCurto(o.num)}</b> · ${esc(o.cliNome || "Sem nome")}${o.veiculo ? " · " + esc(o.veiculo) : ""} <span class="badge ${osStatus(o)}">${label(STATUS_OS, osStatus(o))}</span></a></div>`;
   const drawTList = () => {
     $("#tList").innerHTML = teams.map(t => {
       const all = osOf(t).sort((a, b) => String(b.data || "").localeCompare(String(a.data || ""))), open = all.filter(aberta).sort((a, b) => String(a.data || "").localeCompare(String(b.data || "")));

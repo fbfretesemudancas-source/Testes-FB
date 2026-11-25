@@ -1,7 +1,7 @@
 // Clientes: cada cliente tem uma ficha (cadastro, contatos, endereços, fotos/documentos por link,
 // observações e histórico). #/clientes lista · #/clientes?id=ID ficha · #/clientes?novo=1 novo
 import { pageHead } from "../components/pageHead.js";
-import { esc, brl, pad, padO, fmtD, toast, waLink, isUrl, digits, firstName } from "../../js/utils.js";
+import { esc, brl, pad, padO, fmtD, toast, waLink, isUrl, digits, firstName, numCurto } from "../../js/utils.js";
 import { listAll, saveItem, removeItem } from "../firebase/db.js";
 import { STATUS_OS, STATUS_ORC, label, blankClient, clientStats, clientAddresses, ofClient, osStatus, totals, addrText } from "../../js/domain.js";
 import { fillForm, bindForm } from "../components/formKit.js";
@@ -81,7 +81,7 @@ async function ficha(view, q) {
     right: [saved && btn({ label: "Excluir", ico: "trash", kind: "danger", cls: "js-del" }), btn({ label: "Voltar à lista", ico: "arrowLeft", href: "#/clientes" })].filter(Boolean) });
   const hist = (list, kind) => list.map(o => {
     const s = kind === "os" ? osStatus(o) : (o.status || "rascunho");
-    return `<div class="h"><div class="n"${kind === "os" ? "" : ' style="font-size:16px"'}>${kind === "os" ? pad(o.num) : padO(o.num)}</div><div class="t"><b>${esc([o.col && o.col.bairro, o.ent && o.ent.bairro].filter(Boolean).join(" → ") || "Sem endereço")}</b>
+    return `<div class="h"><div class="n"${kind === "os" ? "" : ' style="font-size:16px"'}>${numCurto(o.num)}</div><div class="t"><b>${esc([o.col && o.col.bairro, o.ent && o.ent.bairro].filter(Boolean).join(" → ") || "Sem endereço")}</b>
       <small>${fmtD(o.data)} · <span class="badge ${s}">${label(kind === "os" ? STATUS_OS : STATUS_ORC, s)}</span></small></div><div class="v">${brl(totals(o).tot)}</div>
       <div class="b">${btn({ label: "Abrir", ico: "eye", sm: true, href: (kind === "os" ? "#/ordens?id=" : "#/orcamentos?id=") + esc(o._id) })}</div></div>`;
   }).join("") || '<p class="note">Nada por aqui ainda.</p>';
