@@ -191,8 +191,8 @@ async function screen(view, q) {
       <div class="row"><label class="f"><span>Data do pagamento</span><input type="date" id="payDate" value="${esc(payDate)}"></label><span></span></div>
       <p class="note" style="margin:-4px 0 10px">Ao tocar em “Pagar”, o valor entra em <b>Despesas</b> do Painel nesta data. Dá para ajustar o valor antes de pagar.</p>
       ${P.length ? `<p style="margin:0 0 8px"><b>Total a pagar:</b> ${brl(tot)}</p><div class="hist">${P.map(p => `<div class="h"><div class="n" style="font-size:16px">${esc(initials(p.nome))}</div>
-        <div class="t"><b>${esc(p.nome)} · ${esc(p.titulo)}</b><small>${p.tipo === "mensal" ? "Vence em " + fmtD(p.venc) : "Serviço de " + fmtD(p.venc)} · <span class="badge ${stCls(p)}">${stTxt(p)}</span>${p.tipo === "frete" ? (p.semValor ? " · informe o valor" : p.origem === "os" ? " · valor definido na OS" : " · valor padrão da ficha") : ""}</small></div>
-        <div class="v"><input data-pv="${esc(p.chave)}" value="${p.valor > 0 ? esc(money(p.valor)) : ""}" placeholder="0,00" inputmode="decimal" aria-label="Valor a pagar" style="width:96px;text-align:right;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--fg);padding:0 8px"></div>
+        <div class="t"><b>${esc(p.nome)} · ${esc(p.titulo)}</b><small>${p.tipo === "mensal" ? "Vence em " + fmtD(p.venc) : "Serviço de " + fmtD(p.venc)} · <span class="badge ${stCls(p)}">${stTxt(p)}</span>${p.tipo === "frete" ? (p.semValor ? " · defina o valor (pode ser 0)" : p.origem === "os" ? " · valor definido na OS" : " · valor padrão da ficha") : ""}</small></div>
+        <div class="v"><input data-pv="${esc(p.chave)}" value="${p.valor > 0 || p.origem === "os" ? esc(money(p.valor)) : ""}" placeholder="0,00" inputmode="decimal" aria-label="Valor a pagar" style="width:96px;text-align:right;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--fg);padding:0 8px"></div>
         <div class="b">${btn({ label: "Pagar", ico: "dollar", kind: "ok", sm: true, attrs: 'data-a="pay" data-ch="' + esc(p.chave) + '"' })}</div></div>`).join("")}</div>`
         : `<p class="note">Nada pendente. ${staff.some(s => s.pagTipo) ? "" : "Defina a forma de pagamento (salário mensal ou por frete) na ficha de cada funcionário."}</p>`}
       ${semForma && staff.some(s => s.pagTipo) ? `<p class="note" style="margin-top:8px">${semForma} funcionário(s) ativo(s) ainda sem forma de pagamento definida.</p>` : ""}</div>
@@ -232,12 +232,15 @@ async function screen(view, q) {
 
       if (a === "pay") {
         const p = pend().find(x => x.chave === b.dataset.ch); if (!p) return;
-        const inp = [...view.querySelectorAll("[data-pv]")].find(i => i.dataset.pv === p.chave), v = num(inp ? inp.value : p.valor);
-        if (v <= 0) { toast("Informe o valor a pagar."); return; }
+        const inp = [...view.querySelectorAll("[data-pv]")].find(i => i.dataset.pv === p.chave), raw = inp ? inp.value.trim() : "";
+        const v = raw === "" ? (p.tipo === "frete" ? 0 : num(p.valor)) : num(raw); // frete: campo em branco vale R$ 0,00
+        if (v < 0) { toast("O valor não pode ser negativo."); return; }
+        if (p.tipo !== "frete" && v <= 0) { toast("Informe o valor a pagar."); return; }  // salário precisa de valor; frete pode ser qualquer valor, inclusive 0
         b.disabled = true;
-        const data = payDate || today(), dsp = await saveItem("despesas", { tipo: p.tipo === "mensal" ? "salario" : "pagamento_frete", data, valor: money(v), descricao: p.titulo + " · " + p.nome, funcionarioId: p.staffId, funcionario: p.nome });
-        await saveItem("pagfunc", { chave: p.chave, staffId: p.staffId, nome: p.nome, tipo: p.tipo, ref: p.ref || "", osId: p.osId || "", osNum: p.osNum || "", titulo: p.titulo, venc: p.venc, valor: money(v), dataPago: data, despId: dsp._id });
-        await reload(); drawPag(); toast("Pagamento registrado e lançado nas despesas");
+        const data = payDate || today();
+        const dsp = v > 0 ? await saveItem("despesas", { tipo: p.tipo === "mensal" ? "salario" : "pagamento_frete", data, valor: money(v), descricao: p.titulo + " · " + p.nome, funcionarioId: p.staffId, funcionario: p.nome }) : null; // R$ 0: nada a lançar nas despesas
+        await saveItem("pagfunc", { chave: p.chave, staffId: p.staffId, nome: p.nome, tipo: p.tipo, ref: p.ref || "", osId: p.osId || "", osNum: p.osNum || "", titulo: p.titulo, venc: p.venc, valor: money(v), dataPago: data, despId: dsp ? dsp._id : "" });
+        await reload(); drawPag(); toast(v > 0 ? "Pagamento registrado e lançado nas despesas" : "Pagamento de R$ 0,00 registrado (nada lançado nas despesas)");
       }
       if (a === "unpay") {
         if (!armDelete(b)) return;
